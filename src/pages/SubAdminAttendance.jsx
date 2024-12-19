@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from '@mui/material';
+import {
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  TextField,
+  Button,
+  Box
+} from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
 const SubAdminAttendance = () => {
@@ -30,28 +43,62 @@ const SubAdminAttendance = () => {
   ];
 
   // Filter attendance data by the email from query parameters
-  const filteredAttendance = attendanceData.filter(record => record.email === email);
+  const filteredAttendance = attendanceData.filter((record) => record.email === email);
 
   // Pagination state
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
+
+  // Filter state for searching by date
+  const [selectedDate, setSelectedDate] = useState('');
 
   // Handle page change
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+  // Handle resetting the date filter
+  const handleReset = () => {
+    setSelectedDate('');
+  };
+
+  // Filter data based on selected date
+  const dateFilteredAttendance = selectedDate
+    ? filteredAttendance.filter((record) => record.date === selectedDate)
+    : filteredAttendance;
+
   // Slice the filtered attendance data for the current page
-  const currentPageData = filteredAttendance.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const currentPageData = dateFilteredAttendance.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   // If there's at least one record, get the name from the first record
   const adminName = filteredAttendance.length > 0 ? filteredAttendance[0].name : email;
 
   return (
     <div className="p-6">
+    <div className='flex justify-between items-center py-4'>
+
       <Typography variant="h4" gutterBottom>
         Attendance for {adminName}
       </Typography>
+
+      
+      {/* Date Filter */}
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', marginBottom: 2 }}>
+        <TextField
+          label="Search by Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          variant="outlined"
+          sx={{ width: '250px' }}
+        />
+        <Button variant="outlined" color="secondary" onClick={handleReset}>
+          Reset
+        </Button>
+      </Box>
+    </div>
+
       <Paper elevation={3}>
         <TableContainer>
           <Table>
@@ -84,7 +131,7 @@ const SubAdminAttendance = () => {
       </Paper>
       <TablePagination
         component="div"
-        count={filteredAttendance.length}
+        count={dateFilteredAttendance.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}

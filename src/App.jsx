@@ -16,6 +16,7 @@ import AttendancePage from './pages/AttendancePage';
 import TaskPage from './pages/TaskPage';
 import SubAdminAttendance from './pages/SubAdminAttendance';
 import SubAdminLeave from './pages/SubAdminLeave';
+import AnnouncementForm from './pages/AnnouncementForm';
 
 const AppContent = () => {
   const location = useLocation();
@@ -27,16 +28,33 @@ const AppContent = () => {
   const showSidebar = !noSidebarPaths.includes(location.pathname);
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* Conditionally render Sidebar */}
-      {showSidebar && <Sidebar />}
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Sidebar */}
+      {showSidebar && (
+        <Box
+          sx={{
+            width: '250px', // Set the sidebar width
+            position: 'fixed', // Fix the sidebar
+            height: '100vh', // Sidebar takes full height
+            overflow: 'hidden', // Prevent scrolling in the sidebar
+            backgroundColor: '#0D1B2A', // Sidebar background color
+            color: '#fff', // Text color for the sidebar
+          }}
+        >
+          <Sidebar />
+        </Box>
+      )}
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          backgroundColor: '#f5f5f5',
+          marginLeft: showSidebar ? '250px' : '0', // Add margin when the sidebar is shown
+          height: '100vh',
+          overflowY: 'auto', // Enable scrolling for the main content
+          backgroundColor: '#f5f5f5', // Background color for the main content
+          padding: 2, // Padding inside the main content
         }}
       >
         <Routes>
@@ -49,10 +67,10 @@ const AppContent = () => {
           <Route path="/admin/subadmin-details" element={<SubAdminDetails />} />
           <Route path="/subadmin/:id/leave" element={<SubAdminLeave />} />
           <Route path="/subadmin/:email/attendance" element={<SubAdminAttendance />} />
-
           <Route path="/admin/meetings" element={<Meeting />} />
           <Route path="/admin/tasks" element={<Task />} />
           <Route path="/admin/tickets" element={<Ticket />} />
+          <Route path="/admin/announcement" element={<AnnouncementForm />} />
         </Routes>
       </Box>
     </Box>

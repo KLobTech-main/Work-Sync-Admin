@@ -13,6 +13,7 @@ import {
   MeetingRoom as MeetingIcon,
   CheckCircle as TaskIcon,
   ConfirmationNumber as TicketIcon,
+  Announcement as Announcement
 } from '@mui/icons-material';
 
 const Sidebar = () => {
@@ -77,6 +78,15 @@ const Sidebar = () => {
               <TicketIcon sx={{ color: '#1E3A8A' }} />
             </ListItemIcon>
             <ListItemText primary="Ticket" sx={{ color: '#E0F2F1' }} />
+          </ListItem>
+        </NavLink>
+        {/* Anouncement */}
+        <NavLink to="/admin/announcement" className="nav-link">
+          <ListItem button>
+            <ListItemIcon>
+              <Announcement sx={{ color: '#1E3A8A' }} />
+            </ListItemIcon>
+            <ListItemText primary="Announcement" sx={{ color: '#E0F2F1' }} />
           </ListItem>
         </NavLink>
       </List>

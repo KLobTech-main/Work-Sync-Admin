@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Paper,
@@ -24,25 +24,44 @@ const TaskPage = () => {
 
   // Dummy task data for the employee
   const taskData = [
-    { id: 1, task: 'Complete project documentation', status: 'In Progress' },
-    { id: 2, task: 'Fix bugs in the login feature', status: 'Completed' },
-    { id: 3, task: 'Review pull requests', status: 'Pending' },
-    { id: 4, task: 'Prepare presentation slides', status: 'In Progress' },
-    { id: 5, task: 'Refactor the codebase', status: 'Completed' },
-    { id: 6, task: 'Deploy application to production', status: 'Pending' },
+    { id: 1, name: 'John Doe', task: 'Complete project documentation', status: 'In Progress' },
+    { id: 2, name: 'John Doe', task: 'Fix bugs in the login feature', status: 'Completed' },
+    { id: 3, name: 'Jane Smith', task: 'Review pull requests', status: 'Pending' },
+    { id: 4, name: 'Jane Smith', task: 'Prepare presentation slides', status: 'In Progress' },
+    { id: 5, name: 'John Doe', task: 'Refactor the codebase', status: 'Completed' },
+    { id: 6, name: 'John Doe', task: 'Deploy application to production', status: 'Pending' },
   ];
 
   const [taskNameFilter, setTaskNameFilter] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('');
+  const [filteredTasks, setFilteredTasks] = useState([]);
 
-  // Filter tasks based on name and status
-  const filteredTasks = taskData.filter((task) => {
-    const matchesTaskName = task.task.toLowerCase().includes(taskNameFilter.toLowerCase());
-    const matchesStatus =
-      taskStatusFilter === '' || task.status === taskStatusFilter;
+  useEffect(() => {
+    if (employee) {
+      console.log('Employee Info:', employee); // Logging the extracted employee info
+    } else {
+      console.error('No employee data found.');
+    }
+  }, [employee]);
 
-    return matchesTaskName && matchesStatus;
-  });
+  // Filter tasks dynamically when filters or employee data change
+  useEffect(() => {
+    if (employee) {
+      let filtered = taskData.filter((task) => task.name === employee.name);
+
+      if (taskNameFilter) {
+        filtered = filtered.filter((task) =>
+          task.task.toLowerCase().includes(taskNameFilter.toLowerCase())
+        );
+      }
+
+      if (taskStatusFilter) {
+        filtered = filtered.filter((task) => task.status === taskStatusFilter);
+      }
+
+      setFilteredTasks(filtered);
+    }
+  }, [employee, taskNameFilter, taskStatusFilter]);
 
   // Reset filters
   const handleReset = () => {
@@ -109,6 +128,7 @@ const TaskPage = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Task ID</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Task Description</TableCell>
                 <TableCell>Status</TableCell>
               </TableRow>
@@ -118,6 +138,8 @@ const TaskPage = () => {
                 filteredTasks.map((task) => (
                   <TableRow key={task.id}>
                     <TableCell>{task.id}</TableCell>
+                    <TableCell>{task.name}</TableCell>
+
                     <TableCell>{task.task}</TableCell>
                     <TableCell>{task.status}</TableCell>
                   </TableRow>

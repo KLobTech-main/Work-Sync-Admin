@@ -1,15 +1,61 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper } from '@mui/material';
+import axios from 'axios';
+import { Box, TextField, Button, Typography, Paper, Snackbar, Alert } from '@mui/material';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [openErrorSnackbar, setOpenErrorSnackbar] = useState(false);
+  const [openSuccessSnackbar, setOpenSuccessSnackbar] = useState(false);
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
-    // Perform login logic here
-    console.log('Email:', email);
-    console.log('Password:', password);
+
+    try {
+      const response = await axios.post(
+        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/api/admin/login',
+        {
+          email,
+          password,
+        }
+      );
+
+      // Handle successful login
+      if (response.status === 200) {
+        const { token } = response.data;
+
+        // Store token and email in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('email', email);
+
+        // Show success snackbar
+        setSuccess('Login successful! Redirecting...');
+        setOpenSuccessSnackbar(true);
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          window.location.href = '/dashboard'; // Replace with your redirect path
+        }, 2000);
+      }
+    } catch (err) {
+      // Handle errors
+      setError(
+        err.response && err.response.data && err.response.data.message
+          ? err.response.data.message
+          : 'Login failed. Please try again.'
+      );
+      setOpenErrorSnackbar(true);
+    }
+  };
+
+  const handleCloseErrorSnackbar = () => {
+    setOpenErrorSnackbar(false);
+  };
+
+  const handleCloseSuccessSnackbar = () => {
+    setOpenSuccessSnackbar(false);
   };
 
   return (
@@ -28,9 +74,13 @@ const Login = () => {
           textAlign: 'center',
         }}
       >
-        <Typography variant="h4" gutterBottom>
-          Login
+        <Typography variant="h4" color='#383574' style={{fontWeight:'bold'}} gutterBottom>
+        Work Sync 
         </Typography>
+        <Typography variant="h4" gutterBottom>
+         Admin Login
+        </Typography>
+
         <form onSubmit={handleLogin}>
           {/* Email Input */}
           <TextField
@@ -66,6 +116,28 @@ const Login = () => {
           </Button>
         </form>
       </Paper>
+      {/* Error Snackbar */}
+      <Snackbar
+        open={openErrorSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseErrorSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseErrorSnackbar} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+      {/* Success Snackbar */}
+      <Snackbar
+        open={openSuccessSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccessSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSuccessSnackbar} severity="success" sx={{ width: '100%' }}>
+          {success}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

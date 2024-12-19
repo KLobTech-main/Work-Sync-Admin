@@ -10,7 +10,6 @@ import {
   TableRow,
   Typography,
   TextField,
-  Box,
   MenuItem,
   Select,
   Button,
@@ -22,39 +21,50 @@ const LeavePage = () => {
 
   // Dummy leave data for the employee
   const leaveData = [
-    { id: 1, type: 'Sick Leave', startDate: '2024-12-01', endDate: '2024-12-03' },
-    { id: 2, type: 'Casual Leave', startDate: '2024-12-10', endDate: '2024-12-12' },
-    { id: 3, type: 'Annual Leave', startDate: '2024-12-15', endDate: '2024-12-20' },
-    { id: 4, type: 'Sick Leave', startDate: '2024-12-21', endDate: '2024-12-23' },
-    { id: 5, type: 'Casual Leave', startDate: '2024-12-25', endDate: '2024-12-27' },
+    { id: 1, name: 'John Doe', email: 'john@example.com', type: 'Sick Leave', startDate: '2024-12-01', endDate: '2024-12-03', },
+    { id: 2, name: 'John Doe', email: 'john@example.com', type: 'Casual Leave', startDate: '2024-12-10', endDate: '2024-12-12', },
+    { id: 3, name: 'Jane Smith', email: 'jane@example.com', type: 'Annual Leave', startDate: '2024-12-15', endDate: '2024-12-20', },
+    { id: 4, name: 'Jane Smith', email: 'jane@example.com', type: 'Sick Leave', startDate: '2024-12-21', endDate: '2024-12-23', },
+    { id: 5, name: 'John Doe', email: 'john@example.com', type: 'Casual Leave', startDate: '2024-12-25', endDate: '2024-12-27', },
   ];
 
   const [filteredLeaveType, setFilteredLeaveType] = useState('');
   const [searchDate, setSearchDate] = useState('');
-  const [filteredData, setFilteredData] = useState(leaveData);
+  const [filteredData, setFilteredData] = useState([]);
 
-  // Filter data dynamically when filters change
   useEffect(() => {
-    let filtered = leaveData;
-
-    if (filteredLeaveType) {
-      filtered = filtered.filter((leave) => leave.type === filteredLeaveType);
+    if (employee) {
+      console.log('Employee Info:', employee); // Logging the extracted employee info
+    } else {
+      console.error('No employee data found.');
     }
+  }, [employee]);
 
-    if (searchDate) {
-      filtered = filtered.filter(
-        (leave) => leave.startDate <= searchDate && leave.endDate >= searchDate
+  // Filter data dynamically when filters or employee data changes
+  useEffect(() => {
+    if (employee) {
+      let filtered = leaveData.filter(
+        (leave) => leave.email === employee.email && leave.name === employee.name
       );
-    }
 
-    setFilteredData(filtered);
-  }, [filteredLeaveType, searchDate]);
+      if (filteredLeaveType) {
+        filtered = filtered.filter((leave) => leave.type === filteredLeaveType);
+      }
+
+      if (searchDate) {
+        filtered = filtered.filter(
+          (leave) => leave.startDate <= searchDate && leave.endDate >= searchDate
+        );
+      }
+
+      setFilteredData(filtered);
+    }
+  }, [employee, filteredLeaveType, searchDate]);
 
   // Reset filters
   const handleReset = () => {
     setFilteredLeaveType('');
     setSearchDate('');
-    setFilteredData(leaveData);
   };
 
   if (!employee) {
@@ -66,20 +76,17 @@ const LeavePage = () => {
   }
 
   return (
-      <div className="p-6">
-      <div className=" flex gap-4 items-center justify-between">
-      <div>
+    <div className="p-6">
+      <div className="flex gap-4 items-center justify-between">
+        <div>
+          <Typography variant="h4" gutterBottom>
+            {employee.name}'s Leave Details
+          </Typography>
+        </div>
 
-      <Typography variant="h4" gutterBottom>
-        {employee.name}'s Leave Details
-      </Typography>
-
-      {/* Filters */}
-     
+        {/* Filters */}
+        <div className="flex gap-4 py-5">
           {/* Leave Type Dropdown */}
-      </div>
-      <div className='flex gap-4 py-5'>
-
           <Select
             value={filteredLeaveType}
             onChange={(e) => setFilteredLeaveType(e.target.value)}
@@ -104,13 +111,12 @@ const LeavePage = () => {
             sx={{ width: '250px' }}
           />
 
-        {/* Reset Button */}
-        <Button variant="outlined" color="secondary" onClick={handleReset}>
-          Reset
-        </Button>
-    
-      </div>
+          {/* Reset Button */}
+          <Button variant="outlined" color="secondary" onClick={handleReset}>
+            Reset
+          </Button>
         </div>
+      </div>
 
       {/* Leave Table */}
       <Paper>
@@ -119,6 +125,7 @@ const LeavePage = () => {
             <TableHead>
               <TableRow>
                 <TableCell>Leave ID</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Leave Type</TableCell>
                 <TableCell>Start Date</TableCell>
                 <TableCell>End Date</TableCell>
@@ -127,7 +134,7 @@ const LeavePage = () => {
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={5} align="center">
                     No leave records found.
                   </TableCell>
                 </TableRow>
@@ -135,6 +142,7 @@ const LeavePage = () => {
                 filteredData.map((leave) => (
                   <TableRow key={leave.id}>
                     <TableCell>{leave.id}</TableCell>
+                    <TableCell>{leave.name}</TableCell>
                     <TableCell>{leave.type}</TableCell>
                     <TableCell>{leave.startDate}</TableCell>
                     <TableCell>{leave.endDate}</TableCell>

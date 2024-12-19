@@ -14,6 +14,10 @@ import {
   Menu,
   MenuItem,
   IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useNavigate } from 'react-router-dom';
@@ -22,8 +26,8 @@ const EmployeeDetails = () => {
   const navigate = useNavigate();
 
   const initialEmployees = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Developer' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Designer' },
+    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Developer', joiningDate: '2022-01-15', mobile: '1234567890' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', joiningDate: '2023-03-10', mobile: '0987654321' },
     // other employees...
   ];
 
@@ -32,6 +36,8 @@ const EmployeeDetails = () => {
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editEmployee, setEditEmployee] = useState(null);
 
   const handleClick = (event, employee) => {
     setAnchorEl(event.currentTarget);
@@ -44,11 +50,26 @@ const EmployeeDetails = () => {
 
   const handleActionSelect = (action) => {
     if (selectedEmployee) {
-      navigate(`/admin/employee/${selectedEmployee.email}/${action}`, { state: { employee: selectedEmployee } });
+      if (action === 'edit') {
+        setEditEmployee(selectedEmployee);
+        setEditDialogOpen(true);
+      } else {
+        navigate(`/admin/employee/${selectedEmployee.email}/${action}`, { state: { employee: selectedEmployee } });
+      }
     }
     setAnchorEl(null);
   };
 
+  const handleEditChange = (field, value) => {
+    setEditEmployee({ ...editEmployee, [field]: value });
+  };
+
+  const handleEditSave = () => {
+    setEmployees((prevEmployees) =>
+      prevEmployees.map((emp) => (emp.id === editEmployee.id ? editEmployee : emp))
+    );
+    setEditDialogOpen(false);
+  };
 
   // Filter and paginate employees (same as your code)
   const filteredEmployees = employees.filter((employee) =>
@@ -98,11 +119,12 @@ const EmployeeDetails = () => {
             <Table>
               <TableHead>
                 <TableRow style={{ backgroundColor: '#f0f0f0' }}>
-                  <TableCell style={{ fontWeight: 'bold' }} >ID</TableCell>
-                  <TableCell style={{ fontWeight: 'bold' }} >Name</TableCell>
-                  <TableCell style={{ fontWeight: 'bold' }} >Email</TableCell>
-                  <TableCell style={{ fontWeight: 'bold' }} >Role</TableCell>
-                  <TableCell style={{ fontWeight: 'bold' }} >Actions</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>ID</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Name</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Email</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Role</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Joining Date</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -112,6 +134,7 @@ const EmployeeDetails = () => {
                     <TableCell>{employee.name}</TableCell>
                     <TableCell>{employee.email}</TableCell>
                     <TableCell>{employee.role}</TableCell>
+                    <TableCell>{employee.joiningDate}</TableCell>
                     <TableCell>
                       <IconButton onClick={(e) => handleClick(e, employee)}>
                         <MoreVertIcon />
@@ -121,6 +144,7 @@ const EmployeeDetails = () => {
                         open={Boolean(anchorEl)}
                         onClose={handleClose}
                       >
+                        <MenuItem onClick={() => handleActionSelect('edit')}>Edit Info</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('leave')}>Leave</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('task')}>Task</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('attendance')}>Attendance</MenuItem>
@@ -145,6 +169,58 @@ const EmployeeDetails = () => {
           Next
         </Button>
       </Box>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>Edit Employee Information</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="Name"
+            type="text"
+            fullWidth
+            value={editEmployee?.name || ''}
+            onChange={(e) => handleEditChange('name', e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Role"
+            type="text"
+            fullWidth
+            value={editEmployee?.role || ''}
+            onChange={(e) => handleEditChange('role', e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Joining Date"
+            type="date"
+            fullWidth
+            value={editEmployee?.joiningDate || ''}
+            onChange={(e) => handleEditChange('joiningDate', e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            margin="dense"
+            label="Mobile Number"
+            type="text"
+            fullWidth
+            value={editEmployee?.mobile || ''}
+            onChange={(e) => handleEditChange('mobile', e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Email"
+            type="email"
+            fullWidth
+            value={editEmployee?.email || ''}
+            onChange={(e) => handleEditChange('email', e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleEditSave} variant="contained" color="primary">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
