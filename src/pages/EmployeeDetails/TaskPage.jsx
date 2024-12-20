@@ -22,57 +22,97 @@ const TaskPage = () => {
   const { state } = useLocation(); // Fetching the employee data passed from the previous page
   const { employee } = state || {};
 
-  // Dummy task data for the employee
-  const taskData = [
-    { id: 1, name: 'John Doe', task: 'Complete project documentation', status: 'In Progress' },
-    { id: 2, name: 'John Doe', task: 'Fix bugs in the login feature', status: 'Completed' },
-    { id: 3, name: 'Jane Smith', task: 'Review pull requests', status: 'Pending' },
-    { id: 4, name: 'Jane Smith', task: 'Prepare presentation slides', status: 'In Progress' },
-    { id: 5, name: 'John Doe', task: 'Refactor the codebase', status: 'Completed' },
-    { id: 6, name: 'John Doe', task: 'Deploy application to production', status: 'Pending' },
-  ];
-
+  const [taskData, setTaskData] = useState([]);
   const [taskNameFilter, setTaskNameFilter] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('');
   const [filteredTasks, setFilteredTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (employee) {
-      console.log('Employee Info:', employee); // Logging the extracted employee info
-    } else {
-      console.error('No employee data found.');
+    const fetchTasks = async () => {
+      try {
+        const adminEmail = localStorage.getItem('email');
+        const token = localStorage.getItem('token');
+
+        if (!adminEmail || !token) {
+          setError('Admin email or token missing in local storage.');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/tasks/get/email?adminEmail=${adminEmail}&email=${employee.email}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setTaskData(data.tasks || []);
+        setFilteredTasks(data.tasks || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (employee?.email) {
+      fetchTasks();
     }
   }, [employee]);
 
-  // Filter tasks dynamically when filters or employee data change
+  // Filter tasks dynamically when filters or taskData change
   useEffect(() => {
-    if (employee) {
-      let filtered = taskData.filter((task) => task.name === employee.name);
+    let filtered = taskData;
 
-      if (taskNameFilter) {
-        filtered = filtered.filter((task) =>
-          task.task.toLowerCase().includes(taskNameFilter.toLowerCase())
-        );
-      }
-
-      if (taskStatusFilter) {
-        filtered = filtered.filter((task) => task.status === taskStatusFilter);
-      }
-
-      setFilteredTasks(filtered);
+    if (taskNameFilter) {
+      filtered = filtered.filter((task) =>
+        task.task.toLowerCase().includes(taskNameFilter.toLowerCase())
+      );
     }
-  }, [employee, taskNameFilter, taskStatusFilter]);
+
+    if (taskStatusFilter) {
+      filtered = filtered.filter((task) => task.status === taskStatusFilter);
+    }
+
+    setFilteredTasks(filtered);
+  }, [taskData, taskNameFilter, taskStatusFilter]);
 
   // Reset filters
   const handleReset = () => {
     setTaskNameFilter('');
     setTaskStatusFilter('');
+    setFilteredTasks(taskData);
   };
 
   if (!employee) {
     return (
       <Typography variant="h6" color="error" align="center">
         Employee not found
+      </Typography>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Typography variant="h6" align="center">
+        Loading tasks...
+      </Typography>
+    );
+  }
+
+  if (error) {
+    return (
+      <Typography variant="h6" color="error" align="center">
+        {error}
       </Typography>
     );
   }
@@ -129,6 +169,7 @@ const TaskPage = () => {
               <TableRow>
                 <TableCell>Task ID</TableCell>
                 <TableCell>Name</TableCell>
+                <TableCell>Email</TableCell>
                 <TableCell>Task Description</TableCell>
                 <TableCell>Status</TableCell>
               </TableRow>
@@ -139,14 +180,14 @@ const TaskPage = () => {
                   <TableRow key={task.id}>
                     <TableCell>{task.id}</TableCell>
                     <TableCell>{task.name}</TableCell>
-
+                    <TableCell>{task.email}</TableCell>
                     <TableCell>{task.task}</TableCell>
                     <TableCell>{task.status}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} align="center">
+                  <TableCell colSpan={5} align="center">
                     No tasks match the filters.
                   </TableCell>
                 </TableRow>

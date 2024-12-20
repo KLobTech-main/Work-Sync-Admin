@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Paper,
   Table,
@@ -13,30 +14,44 @@ import {
 } from '@mui/material';
 
 const Meeting = () => {
-  const meetings = [
-    { id: 1, employee: 'John Doe', meetingTime: '10:00 AM', topic: 'Project Update', date: '2024-12-15' },
-    { id: 2, employee: 'Jane Smith', meetingTime: '02:00 PM', topic: 'Design Review', date: '2024-12-18' },
-    { id: 3, employee: 'Michael Johnson', meetingTime: '11:30 AM', topic: 'Sprint Planning', date: '2024-12-16' },
-    { id: 4, employee: 'Emily Davis', meetingTime: '04:00 PM', topic: 'Code Review', date: '2024-12-17' },
-    { id: 5, employee: 'William Brown', meetingTime: '01:00 PM', topic: 'Client Discussion', date: '2024-12-19' },
-    { id: 6, employee: 'Alice Green', meetingTime: '03:30 PM', topic: 'Team Building', date: '2024-12-20' },
-    { id: 7, employee: 'Robert White', meetingTime: '09:00 AM', topic: 'Marketing Strategy', date: '2024-12-21' },
-    { id: 8, employee: 'Emma Clark', meetingTime: '12:00 PM', topic: 'Product Demo', date: '2024-12-22' },
-    { id: 9, employee: 'Daniel Lewis', meetingTime: '02:30 PM', topic: 'Budget Planning', date: '2024-12-23' },
-    { id: 10, employee: 'Sophia Turner', meetingTime: '10:30 AM', topic: 'Sales Meeting', date: '2024-12-24' },
-    { id: 11, employee: 'James White', meetingTime: '03:00 PM', topic: 'Project Overview', date: '2024-12-25' },
-    { id: 12, employee: 'Olivia Black', meetingTime: '01:30 PM', topic: 'Team Collaboration', date: '2024-12-26' },
-  ];
-
+  const [meetings, setMeetings] = useState([]); // State for meetings
   const [searchTerm, setSearchTerm] = useState(''); // State for topic filter
   const [searchDate, setSearchDate] = useState(''); // State for date filter
   const [page, setPage] = useState(0); // Current page
   const [rowsPerPage, setRowsPerPage] = useState(10); // Rows per page
 
+  // Fetch meetings data
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      const email = localStorage.getItem('email');
+      const token = localStorage.getItem('token');
+
+      try {
+        const response = await axios.get(
+          'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/meetings/get-all',
+          {
+            headers: {
+              Authorization: token,
+            },
+            params: {
+              adminEmail: email,
+            },
+          }
+        );
+
+        setMeetings(response.data);
+      } catch (error) {
+        console.error('Error fetching meetings:', error);
+      }
+    };
+
+    fetchMeetings();
+  }, []);
+
   // Filter meetings based on topic and date
   const filteredMeetings = meetings.filter((meeting) => {
-    const matchesTopic = meeting.topic.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = searchDate ? meeting.date === searchDate : true; // If searchDate is empty, include all dates
+    const matchesTopic = meeting.meetingTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDate = searchDate ? meeting.date === searchDate : true;
     return matchesTopic && matchesDate;
   });
 
@@ -62,7 +77,7 @@ const Meeting = () => {
             label="Search by Topic"
             variant="outlined"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} // Update topic search term
+            onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ width: '400px' }}
           />
           {/* Date Filter */}
@@ -72,7 +87,7 @@ const Meeting = () => {
             InputLabelProps={{ shrink: true }}
             variant="outlined"
             value={searchDate}
-            onChange={(e) => setSearchDate(e.target.value)} // Update date search term
+            onChange={(e) => setSearchDate(e.target.value)}
             sx={{ width: '400px' }}
           />
         </Box>
@@ -85,28 +100,40 @@ const Meeting = () => {
             <TableHead>
               <TableRow style={{ backgroundColor: '#f0f0f0' }}>
                 <TableCell style={{ fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell style={{ fontWeight: 'bold' }}>Employee</TableCell>
-                <TableCell style={{ fontWeight: 'bold' }}>Meeting Time</TableCell>
-                <TableCell style={{ fontWeight: 'bold' }}>Topic</TableCell>
+                <TableCell style={{width:'130px', fontWeight: 'bold' }}>Meeting Title</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Description</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Mode</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Participants</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Duration</TableCell>
                 <TableCell style={{ fontWeight: 'bold' }}>Date</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Time</TableCell>
+                <TableCell style={{ fontWeight: 'bold' }}>Link</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredMeetings.length > 0 ? (
                 filteredMeetings
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) // Show `rowsPerPage` meetings per page
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((meeting) => (
                     <TableRow key={meeting.id}>
                       <TableCell>{meeting.id}</TableCell>
-                      <TableCell>{meeting.employee}</TableCell>
-                      <TableCell>{meeting.meetingTime}</TableCell>
-                      <TableCell>{meeting.topic}</TableCell>
+                      <TableCell>{meeting.meetingTitle}</TableCell>
+                      <TableCell>{meeting.description}</TableCell>
+                      <TableCell>{meeting.meetingMode}</TableCell>
+                      <TableCell>{meeting.participants.join(', ')}</TableCell>
+                      <TableCell>{meeting.duration}</TableCell>
                       <TableCell>{meeting.date}</TableCell>
+                      <TableCell sx={{width:'110px'}}>{new Date(meeting.scheduledTime).toLocaleTimeString()}</TableCell>
+                      <TableCell>
+                        <a href={meeting.meetingLink} target="_blank" rel="noopener noreferrer">
+                          Join
+                        </a>
+                      </TableCell>
                     </TableRow>
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={11} align="center">
                     No meetings match the search criteria.
                   </TableCell>
                 </TableRow>
@@ -118,13 +145,13 @@ const Meeting = () => {
 
       {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[10]} // Allow only 10 rows per page
+        rowsPerPageOptions={[10]}
         component="div"
         count={filteredMeetings.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage} // Allow changing rows per page
+        onRowsPerPageChange={handleChangeRowsPerPage}
       />
     </div>
   );

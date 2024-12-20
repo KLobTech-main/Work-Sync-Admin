@@ -2,20 +2,18 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
 import Sidebar from './components/Sidebar'; // Sidebar component
-
-// Page components
 import EmployeeDetails from './pages/EmployeeDetail';
 import SubAdminDetails from './pages/SubAdminDetail';
 import Ticket from './pages/Ticket';
 import Task from './pages/Task';
 import Meeting from './pages/Meeting';
 import Login from './pages/Login';
-import LeavePage from './pages/LeavePage';
+import LeavePage from './pages/EmployeeDetails/LeavePage';
 import Register from './pages/Register';
-import AttendancePage from './pages/AttendancePage';
-import TaskPage from './pages/TaskPage';
-import SubAdminAttendance from './pages/SubAdminAttendance';
-import SubAdminLeave from './pages/SubAdminLeave';
+import AttendancePage from './pages/EmployeeDetails/AttendancePage';
+import TaskPage from './pages/EmployeeDetails/TaskPage';
+import SubAdminAttendance from './pages/SubAdminDetails/SubAdminAttendance';
+import SubAdminLeave from './pages/SubAdminDetails/SubAdminLeave';
 import AnnouncementForm from './pages/AnnouncementForm';
 
 const AppContent = () => {
@@ -33,12 +31,12 @@ const AppContent = () => {
       {showSidebar && (
         <Box
           sx={{
-            width: '250px', // Set the sidebar width
-            position: 'fixed', // Fix the sidebar
-            height: '100vh', // Sidebar takes full height
-            overflow: 'hidden', // Prevent scrolling in the sidebar
-            backgroundColor: '#0D1B2A', // Sidebar background color
-            color: '#fff', // Text color for the sidebar
+            width: '250px', 
+            position: 'fixed',
+            height: '100vh', 
+            overflow: 'hidden', 
+            backgroundColor: '#0D1B2A', 
+            color: '#fff', 
           }}
         >
           <Sidebar />
@@ -50,11 +48,11 @@ const AppContent = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          marginLeft: showSidebar ? '250px' : '0', // Add margin when the sidebar is shown
+          marginLeft: showSidebar ? '250px' : '0', 
           height: '100vh',
-          overflowY: 'auto', // Enable scrolling for the main content
-          backgroundColor: '#f5f5f5', // Background color for the main content
-          padding: 2, // Padding inside the main content
+          overflowY: 'auto', 
+          backgroundColor: '#f5f5f5', 
+          padding: 2, 
         }}
       >
         <Routes>

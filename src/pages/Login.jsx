@@ -36,7 +36,7 @@ const Login = () => {
 
         // Redirect after a short delay
         setTimeout(() => {
-          window.location.href = '/dashboard'; // Replace with your redirect path
+          window.location.href = '/admin/employee-details'; // Replace with your redirect path
         }, 2000);
       }
     } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Paper,
   Table,
@@ -25,19 +25,45 @@ import { useNavigate } from 'react-router-dom';
 const EmployeeDetails = () => {
   const navigate = useNavigate();
 
-  const initialEmployees = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Developer', joiningDate: '2022-01-15', mobile: '1234567890' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', joiningDate: '2023-03-10', mobile: '0987654321' },
-    // other employees...
-  ];
-
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState(null);
+  const [showAllInfoDialogOpen, setShowAllInfoDialogOpen] = useState(false);
+
+  // Fetch employee data
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const email = localStorage.getItem('email');
+      const token = localStorage.getItem('token');
+
+      try {
+        const response = await fetch(
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/get-all-users?adminEmail=${encodeURIComponent(email)}`,
+          {
+            headers: {
+              'Authorization': token,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setEmployees(data);
+        } else {
+          console.error('Failed to fetch employees');
+        }
+      } catch (error) {
+        console.error('Error fetching employees:', error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const handleClick = (event, employee) => {
     setAnchorEl(event.currentTarget);
@@ -53,6 +79,8 @@ const EmployeeDetails = () => {
       if (action === 'edit') {
         setEditEmployee(selectedEmployee);
         setEditDialogOpen(true);
+      } else if (action === 'showAllInfoedit') {
+        setShowAllInfoDialogOpen(true);
       } else {
         navigate(`/admin/employee/${selectedEmployee.email}/${action}`, { state: { employee: selectedEmployee } });
       }
@@ -71,7 +99,11 @@ const EmployeeDetails = () => {
     setEditDialogOpen(false);
   };
 
-  // Filter and paginate employees (same as your code)
+  const handleCloseShowAllInfoDialog = () => {
+    setShowAllInfoDialogOpen(false);
+  };
+
+  // Filter and paginate employees
   const filteredEmployees = employees.filter((employee) =>
     employee.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -144,6 +176,7 @@ const EmployeeDetails = () => {
                         open={Boolean(anchorEl)}
                         onClose={handleClose}
                       >
+                        <MenuItem onClick={() => handleActionSelect('showAllInfoedit')}>Show All Info</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('edit')}>Edit Info</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('leave')}>Leave</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('task')}>Task</MenuItem>
@@ -169,6 +202,8 @@ const EmployeeDetails = () => {
           Next
         </Button>
       </Box>
+
+      {/* Dialog to Edit Employee */}
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
         <DialogTitle>Edit Employee Information</DialogTitle>
         <DialogContent>
@@ -221,6 +256,118 @@ const EmployeeDetails = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog to Show All Employee Information */}
+      <Dialog open={showAllInfoDialogOpen} onClose={handleCloseShowAllInfoDialog}>
+  <DialogTitle>Employee Information</DialogTitle>
+  <DialogContent>
+    {selectedEmployee ? (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell><strong>ID</strong></TableCell>
+              <TableCell>{selectedEmployee.id || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Name</strong></TableCell>
+              <TableCell>{selectedEmployee.name || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Email</strong></TableCell>
+              <TableCell>{selectedEmployee.email || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Mobile</strong></TableCell>
+              <TableCell>{selectedEmployee.mobileNo || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Role</strong></TableCell>
+              <TableCell>{selectedEmployee.role || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>DOB</strong></TableCell>
+              <TableCell>{selectedEmployee.dob || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Current Address</strong></TableCell>
+              <TableCell>{selectedEmployee.addressDetails?.currentAddress || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Permanent Address</strong></TableCell>
+              <TableCell>{selectedEmployee.addressDetails?.permanentAddress || 'Not Available'}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Emergency Contacts</strong></TableCell>
+              <TableCell>
+                {selectedEmployee.emergencyContactDetails?.length > 0 ? (
+                  selectedEmployee.emergencyContactDetails.map((contact, index) => (
+                    <div key={index}>
+                      {contact.relation}: {contact.emergencyContactName} ({contact.emergencyContactNo})
+                    </div>
+                  ))
+                ) : (
+                  'Not Available'
+                )}
+              </TableCell>
+            </TableRow>
+              <TableCell colSpan={2}>
+                <strong>Leave: </strong>
+              </TableCell>
+            <TableRow>
+              <TableCell><strong>Sick Leave</strong></TableCell>
+              <TableCell>{selectedEmployee.allLeaves?.sickLeave || 0}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Casual Leave</strong></TableCell>
+              <TableCell>{selectedEmployee.allLeaves?.casualLeave || 0}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Paternity Leave</strong></TableCell>
+              <TableCell>{selectedEmployee.allLeaves?.paternity || 0}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell><strong>Optional Leave</strong></TableCell>
+              <TableCell>{selectedEmployee.allLeaves?.optionalLeave || 0}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell colSpan={2}>
+                <strong>Bank Details: </strong>
+              </TableCell>
+            </TableRow>
+                
+                  
+                      <TableRow>
+                        <TableCell><strong>Account Holder Name</strong></TableCell>
+                        <TableCell>{selectedEmployee.bankDetails?.accountHolderName || 'Not Available'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>Account Type</strong></TableCell>
+                        <TableCell>{selectedEmployee.bankDetails?.accountType || 'Not Available'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>Account Number</strong></TableCell>
+                        <TableCell>{selectedEmployee.bankDetails?.accountNumber || 'Not Available'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell><strong>IFSC Code</strong></TableCell>
+                        <TableCell>{selectedEmployee.bankDetails?.ifscCode || 'Not Available'}</TableCell>
+                      </TableRow>
+                    
+          </TableBody>
+        </Table>
+      </TableContainer>
+    ) : (
+      <Typography color="error">No employee data available.</Typography>
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleCloseShowAllInfoDialog}>Close</Button>
+  </DialogActions>
+</Dialog>
+
+
+
     </div>
   );
 };
