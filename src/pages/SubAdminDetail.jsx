@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Paper,
   Table,
@@ -20,27 +20,68 @@ import {
   DialogActions,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const SubAdminDetails = () => {
   const navigate = useNavigate();
-  const subAdminsData = [
-    { id: 1, name: 'Admin One', email: 'admin1@example.com', role: 'Manager', joiningDate: '2022-01-15', mobile: '1234567890', isActive: false },
-    { id: 2, name: 'Admin Two', email: 'admin2@example.com', role: 'Supervisor', joiningDate: '2021-09-10', mobile: '9876543210', isActive: true },
-    { id: 3, name: 'Admin Three', email: 'admin3@example.com', role: 'Coordinator', joiningDate: '2023-03-22', mobile: '1122334455', isActive: false },
-    { id: 4, name: 'Admin Four', email: 'admin4@example.com', role: 'Analyst', joiningDate: '2022-11-05', mobile: '4455667788', isActive: true },
-    { id: 5, name: 'Admin Five', email: 'admin5@example.com', role: 'HR', joiningDate: '2021-12-20', mobile: '5566778899', isActive: false },
-    // Additional Data
-    { id: 6, name: 'Admin Six', email: 'admin6@example.com', role: 'Finance', joiningDate: '2020-05-15', mobile: '9988776655', isActive: true },
-    { id: 7, name: 'Admin Seven', email: 'admin7@example.com', role: 'IT Support', joiningDate: '2023-01-25', mobile: '6677889900', isActive: false },
+
+  const dummyData = [
+    {
+      id: 1,
+      name: 'Dummy Admin',
+      email: 'dummy.admin@example.com',
+      role: 'Temporary Role',
+      joiningDate: '2023-01-01',
+      mobile: '0000000000',
+      isActive: true,
+    },
+    {
+      id: 3,
+      name: 'Dummy Admin',
+      email: 'dummy.admin@example.com',
+      role: 'Temporary Role',
+      joiningDate: '2023-01-01',
+      mobile: '0000000000',
+      isActive: true,
+    },
+    {
+    id: 5,
+    name: "Not Available",
+    email: "Not Available",
+    role: "Not Available",
+    mobile: "Not Available",
+    dob: "Not Available",
+    addressDetails: {
+      currentAddress: "Not Available",
+      permanentAddress: "Not Available",
+    },
+    emergencyContactDetails: [],
+    allLeaves: {
+      sickLeave: 0,
+      casualLeave: 0,
+      paternity: 0,
+      optionalLeave: 0,
+    },
+    bankDetails: {
+      accountHolderName: "Not Available",
+      accountType: "Not Available",
+      accountNumber: "Not Available",
+      ifscCode: "Not Available",
+    },
+  }
   ];
 
-  const [subAdmins, setSubAdmins] = useState(subAdminsData);
+  const [subAdmins, setSubAdmins] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedAdminId, setSelectedAdminId] = useState(null);
   const [selectedAdminEmail, setSelectedAdminEmail] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  
+    const [showAllInfoDialogOpen, setShowAllInfoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -52,11 +93,43 @@ const SubAdminDetails = () => {
 
   const rowsPerPage = 10;
 
-  const handleMenuOpen = (event, adminId, adminEmail) => {
+  useEffect(() => {
+    const fetchSubAdmins = async () => {
+      try {
+        const adminEmail = localStorage.getItem('email');
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/subAdmin/getSubAdmin?adminEmail=${adminEmail}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        const apiData = response.data?.data || [];
+        setSubAdmins(apiData.length > 0 ? apiData : dummyData);
+      } catch (error) {
+        console.error('Error fetching sub-admins:', error);
+        setSubAdmins(dummyData);
+      }
+    };
+
+    fetchSubAdmins();
+  }, []);
+
+  const handleCloseShowAllInfoDialog = () => {
+    setShowAllInfoDialogOpen(false);
+  };
+
+
+  const handleMenuOpen = (event, adminId, adminEmail, subAdmin) => {
+    console.log("Sub Admin Data:", subAdmin); // Log the subAdmin data
     setAnchorEl(event.currentTarget);
     setSelectedAdminId(adminId);
     setSelectedAdminEmail(adminEmail);
+    setSelectedEmployee(subAdmin);
   };
+  
 
   const handleMenuClose = () => {
     setAnchorEl(null);
@@ -69,7 +142,10 @@ const SubAdminDetails = () => {
       navigate(`/subadmin/${selectedAdminId}/leave?email=${encodeURIComponent(selectedAdminEmail)}`);
     } else if (action === 'Attendance') {
       navigate(`/subadmin/${selectedAdminId}/attendance?email=${encodeURIComponent(selectedAdminEmail)}`);
-    } else if (action === 'Edit Info') {
+    }  else if (action === 'showAllInfoedit') {
+      setShowAllInfoDialogOpen(true);
+    }
+    else if (action === 'Edit Info') {
       const selectedAdmin = subAdmins.find((admin) => admin.id === selectedAdminId);
       if (selectedAdmin) {
         setEditFormData({
@@ -85,7 +161,10 @@ const SubAdminDetails = () => {
     handleMenuClose();
   };
 
-  const handleApproveAccess = (id) => {
+console.log(selectedEmployee)
+  
+
+const handleApproveAccess = (id) => {
     const updatedAdmins = subAdmins.map((admin) =>
       admin.id === id ? { ...admin, isActive: !admin.isActive } : admin
     );
@@ -174,16 +253,18 @@ const SubAdminDetails = () => {
                       </Button>
                     </TableCell>
                     <TableCell>
-                      <IconButton
-                        onClick={(event) => handleMenuOpen(event, subAdmin.id, subAdmin.email)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
+                    <IconButton
+  onClick={(event) => handleMenuOpen(event, subAdmin.id, subAdmin.email, subAdmin)}
+>
+  <MoreVertIcon />
+</IconButton>
+
                       <Menu
                         anchorEl={anchorEl}
                         open={Boolean(anchorEl) && selectedAdminId === subAdmin.id}
                         onClose={handleMenuClose}
                       >
+                        <MenuItem onClick={() => handleMenuAction('showAllInfoedit')}>Show All Info</MenuItem>
                         <MenuItem onClick={() => handleMenuAction('Edit Info')}>Edit Info</MenuItem>
                         <MenuItem onClick={() => handleMenuAction('Leave')}>Leave</MenuItem>
                         <MenuItem onClick={() => handleMenuAction('Attendance')}>Attendance</MenuItem>
@@ -201,19 +282,19 @@ const SubAdminDetails = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, p: 2 }}>
-          <Button variant="outlined" onClick={handlePrevPage} disabled={page === 1}>
-            Prev
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleNextPage}
-            disabled={page * rowsPerPage >= filteredSubAdmins.length}
-          >
-            Next
-          </Button>
-        </Box>
       </Paper>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, p: 2 }}>
+        <Button variant="outlined" onClick={handlePrevPage} disabled={page === 1}>
+          Prev
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={handleNextPage}
+          disabled={page * rowsPerPage >= filteredSubAdmins.length}
+        >
+          Next
+        </Button>
+      </Box>
 
       <Dialog open={editDialogOpen} onClose={handleEditDialogClose} fullWidth>
         <DialogTitle>Edit Employee Info</DialogTitle>
@@ -224,13 +305,6 @@ const SubAdminDetails = () => {
             fullWidth
             value={editFormData.name}
             onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-          />
-          <TextField
-            margin="normal"
-            label="Role"
-            fullWidth
-            value={editFormData.role}
-            onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
           />
           <TextField
             margin="normal"
@@ -272,6 +346,119 @@ const SubAdminDetails = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+        
+  {/* Dialog to Show All Employee Information */}
+   <Dialog open={showAllInfoDialogOpen} onClose={handleCloseShowAllInfoDialog}>
+    <DialogTitle>Employee Information</DialogTitle>
+    <DialogContent>
+      {selectedEmployee ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell><strong>ID</strong></TableCell>
+                <TableCell>{selectedEmployee.id || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Name</strong></TableCell>
+                <TableCell>{selectedEmployee.name || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Email</strong></TableCell>
+                <TableCell>{selectedEmployee.email || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Mobile</strong></TableCell>
+                <TableCell>{selectedEmployee.mobileNo || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Role</strong></TableCell>
+                <TableCell>{selectedEmployee.role || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>DOB</strong></TableCell>
+                <TableCell>{selectedEmployee.dob || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Current Address</strong></TableCell>
+                <TableCell>{selectedEmployee.addressDetails?.currentAddress || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Permanent Address</strong></TableCell>
+                <TableCell>{selectedEmployee.addressDetails?.permanentAddress || 'Not Available'}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Emergency Contacts</strong></TableCell>
+                <TableCell>
+                  {selectedEmployee.emergencyContactDetails?.length > 0 ? (
+                    selectedEmployee.emergencyContactDetails.map((contact, index) => (
+                      <div key={index}>
+                        {contact.relation}: {contact.emergencyContactName} ({contact.emergencyContactNo})
+                      </div>
+                    ))
+                  ) : (
+                    'Not Available'
+                  )}
+                </TableCell>
+              </TableRow>
+                <TableCell colSpan={2}>
+                  <strong>Leave: </strong>
+                </TableCell>
+              <TableRow>
+                <TableCell><strong>Sick Leave</strong></TableCell>
+                <TableCell>{selectedEmployee.allLeaves?.sickLeave || 0}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Casual Leave</strong></TableCell>
+                <TableCell>{selectedEmployee.allLeaves?.casualLeave || 0}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Paternity Leave</strong></TableCell>
+                <TableCell>{selectedEmployee.allLeaves?.paternity || 0}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell><strong>Optional Leave</strong></TableCell>
+                <TableCell>{selectedEmployee.allLeaves?.optionalLeave || 0}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell colSpan={2}>
+                  <strong>Bank Details: </strong>
+                </TableCell>
+              </TableRow>
+                  
+                    
+                        <TableRow>
+                          <TableCell><strong>Account Holder Name</strong></TableCell>
+                          <TableCell>{selectedEmployee.bankDetails?.accountHolderName || 'Not Available'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell><strong>Account Type</strong></TableCell>
+                          <TableCell>{selectedEmployee.bankDetails?.accountType || 'Not Available'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell><strong>Account Number</strong></TableCell>
+                          <TableCell>{selectedEmployee.bankDetails?.accountNumber || 'Not Available'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell><strong>IFSC Code</strong></TableCell>
+                          <TableCell>{selectedEmployee.bankDetails?.ifscCode || 'Not Available'}</TableCell>
+                        </TableRow>
+                      
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Typography color="error">No employee data available.</Typography>
+      )}
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleCloseShowAllInfoDialog}>Close</Button>
+    </DialogActions>
+  </Dialog>
+
+
+
     </div>
   );
 };

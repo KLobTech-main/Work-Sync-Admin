@@ -15,7 +15,7 @@ import TaskPage from './pages/EmployeeDetails/TaskPage';
 import SubAdminAttendance from './pages/SubAdminDetails/SubAdminAttendance';
 import SubAdminLeave from './pages/SubAdminDetails/SubAdminLeave';
 import AnnouncementForm from './pages/AnnouncementForm';
-
+import LeaveRequest from './pages/LeaveRequest';
 const AppContent = () => {
   const location = useLocation();
 
@@ -69,6 +69,7 @@ const AppContent = () => {
           <Route path="/admin/tasks" element={<Task />} />
           <Route path="/admin/tickets" element={<Ticket />} />
           <Route path="/admin/announcement" element={<AnnouncementForm />} />
+          <Route path="/admin/leave-request" element={<LeaveRequest />} />
         </Routes>
       </Box>
     </Box>

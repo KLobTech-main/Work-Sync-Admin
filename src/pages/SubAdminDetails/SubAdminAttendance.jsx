@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Paper,
   Typography,
@@ -11,132 +11,153 @@ import {
   TablePagination,
   TextField,
   Button,
-  Box
+  Box,
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const SubAdminAttendance = () => {
-  const location = useLocation(); // Get the current location object
-
-  // Extract the email from the query string using URLSearchParams
+  const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const email = queryParams.get('email'); // Get the email parameter from the URL query
+  const email = queryParams.get('email'); // Get employee email from query parameter
+  const adminEmail = localStorage.getItem('email'); // Get admin email from localStorage
+  const token = localStorage.getItem('token'); // Get token from localStorage
 
-  // Sample attendance data
-  const attendanceData = [
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-01', status: 'Present' },
-    { email: 'admin2@example.com', name: 'Admin Two', date: '2024-12-01', status: 'Absent' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-02', status: 'Absent' },
-    { email: 'admin3@example.com', name: 'Admin Three', date: '2024-12-02', status: 'Present' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-03', status: 'Present' },
-    { email: 'admin2@example.com', name: 'Admin Two', date: '2024-12-03', status: 'Present' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-04', status: 'Present' },
-    { email: 'admin2@example.com', name: 'Admin Two', date: '2024-12-04', status: 'Absent' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-05', status: 'Absent' },
-    { email: 'admin3@example.com', name: 'Admin Three', date: '2024-12-05', status: 'Present' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-06', status: 'Present' },
-    { email: 'admin2@example.com', name: 'Admin Two', date: '2024-12-06', status: 'Present' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-07', status: 'Absent' },
-    { email: 'admin2@example.com', name: 'Admin Two', date: '2024-12-07', status: 'Present' },
-    { email: 'admin1@example.com', name: 'Admin One', date: '2024-12-08', status: 'Present' },
-    { email: 'admin3@example.com', name: 'Admin Three', date: '2024-12-08', status: 'Absent' },
-  ];
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filter attendance data by the email from query parameters
-  const filteredAttendance = attendanceData.filter((record) => record.email === email);
-
-  // Pagination state
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
+  const [selectedDate, setSelectedDate] = useState(''); // Date filter state
 
-  // Filter state for searching by date
-  const [selectedDate, setSelectedDate] = useState('');
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      if (!email || !adminEmail || !token) {
+        setError('Missing required parameters or authentication.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/attendance/${email}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+            params: {
+              adminEmail,
+            },
+          }
+        );
+
+        setAttendanceData(response.data || []);
+      } catch (err) {
+        console.error('Error fetching attendance data:', err);
+        setError('Failed to fetch attendance data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, [email, adminEmail, token]);
 
   // Handle page change
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Handle resetting the date filter
+  // Reset the date filter
   const handleReset = () => {
     setSelectedDate('');
   };
 
-  // Filter data based on selected date
-  const dateFilteredAttendance = selectedDate
-    ? filteredAttendance.filter((record) => record.date === selectedDate)
-    : filteredAttendance;
+  // Filter attendance by date if a date is selected
+  const filteredAttendance = selectedDate
+    ? attendanceData.filter((record) => record.date === selectedDate)
+    : attendanceData;
 
-  // Slice the filtered attendance data for the current page
-  const currentPageData = dateFilteredAttendance.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  // Paginate filtered data
+  const currentPageData = filteredAttendance.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  // If there's at least one record, get the name from the first record
-  const adminName = filteredAttendance.length > 0 ? filteredAttendance[0].name : email;
+  // Format date and time for display
+  const formatDate = (date) => new Date(date).toLocaleDateString();
+  const formatTime = (time) => (time ? new Date(time).toLocaleTimeString() : 'N/A');
 
   return (
     <div className="p-6">
-    <div className='flex justify-between items-center py-4'>
+      <div className="flex justify-between items-center py-4">
+        <Typography variant="h4" gutterBottom>
+          Attendance for {email || 'Unknown User'}
+        </Typography>
 
-      <Typography variant="h4" gutterBottom>
-        Attendance for {adminName}
-      </Typography>
+        {/* Date Filter */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label="Search by Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            variant="outlined"
+            sx={{ width: '250px' }}
+          />
+          <Button variant="outlined" color="secondary" onClick={handleReset}>
+            Reset
+          </Button>
+        </Box>
+      </div>
 
-      
-      {/* Date Filter */}
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', marginBottom: 2 }}>
-        <TextField
-          label="Search by Date"
-          type="date"
-          InputLabelProps={{ shrink: true }}
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          variant="outlined"
-          sx={{ width: '250px' }}
-        />
-        <Button variant="outlined" color="secondary" onClick={handleReset}>
-          Reset
-        </Button>
-      </Box>
-    </div>
-
-      <Paper elevation={3}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow style={{ backgroundColor: '#f0f0f0' }}>
-                <TableCell style={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell style={{ fontWeight: 'bold' }}>Date</TableCell>
-                <TableCell style={{ fontWeight: 'bold' }}>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {currentPageData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} align="center">
-                    No attendance records found for this email.
-                  </TableCell>
+      {loading ? (
+        <Typography>Loading...</Typography>
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : (
+        <Paper elevation={3}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow style={{ backgroundColor: '#f0f0f0' }}>
+                  <TableCell style={{ fontWeight: 'bold' }}>ID</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Name</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Punch In</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }}>Punch Out</TableCell>
                 </TableRow>
-              ) : (
-                currentPageData.map((record, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{record.email}</TableCell>
-                    <TableCell>{record.date}</TableCell>
-                    <TableCell>{record.status}</TableCell>
+              </TableHead>
+              <TableBody>
+                {currentPageData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      No attendance records found.
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-      <TablePagination
-        component="div"
-        count={dateFilteredAttendance.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[]}
-      />
+                ) : (
+                  currentPageData.map((attendance, index) => (
+                    <TableRow key={attendance.id || index}>
+                      <TableCell>{attendance.id || index + 1}</TableCell>
+                      <TableCell>{attendance.name}</TableCell>
+                      <TableCell>{formatDate(attendance.date)}</TableCell>
+                      <TableCell>{formatTime(attendance.punchInTime)}</TableCell>
+                      <TableCell>{formatTime(attendance.punchOutTime)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={filteredAttendance.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            rowsPerPageOptions={[]}
+          />
+        </Paper>
+      )}
     </div>
   );
 };

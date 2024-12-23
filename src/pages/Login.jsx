@@ -15,7 +15,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/api/admin/login',
+        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/login',
         {
           email,
           password,

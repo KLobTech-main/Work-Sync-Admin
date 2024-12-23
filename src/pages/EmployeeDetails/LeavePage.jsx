@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import {
   Paper,
@@ -19,52 +20,70 @@ const LeavePage = () => {
   const { state } = useLocation(); // Fetching the employee data passed from the previous page
   const { employee } = state || {};
 
-  // Dummy leave data for the employee
-  const leaveData = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', type: 'Sick Leave', startDate: '2024-12-01', endDate: '2024-12-03', },
-    { id: 2, name: 'John Doe', email: 'john@example.com', type: 'Casual Leave', startDate: '2024-12-10', endDate: '2024-12-12', },
-    { id: 3, name: 'Jane Smith', email: 'jane@example.com', type: 'Annual Leave', startDate: '2024-12-15', endDate: '2024-12-20', },
-    { id: 4, name: 'Jane Smith', email: 'jane@example.com', type: 'Sick Leave', startDate: '2024-12-21', endDate: '2024-12-23', },
-    { id: 5, name: 'John Doe', email: 'john@example.com', type: 'Casual Leave', startDate: '2024-12-25', endDate: '2024-12-27', },
-  ];
-
+  const [leaveData, setLeaveData] = useState([]);
   const [filteredLeaveType, setFilteredLeaveType] = useState('');
   const [searchDate, setSearchDate] = useState('');
   const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
-    if (employee) {
-      console.log('Employee Info:', employee); // Logging the extracted employee info
-    } else {
-      console.error('No employee data found.');
-    }
+    const fetchLeaveData = async () => {
+      try {
+        const adminEmail = localStorage.getItem('email');
+        const token = localStorage.getItem('token');
+
+        if (!adminEmail || !token) {
+          console.error('Admin email or token missing from local storage.');
+          return;
+        }
+
+        if (!employee?.email) {
+          console.error('Employee email is missing.');
+          return;
+        }
+
+        const response = await axios.get(
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/leaves/${employee.email}?adminEmail=${adminEmail}`,
+          {
+            headers: { Authorization: token },
+          }
+        );
+
+        setLeaveData(response.data);
+        setFilteredData(response.data); // Initialize filtered data with the API response
+      } catch (error) {
+        console.error('Error fetching leave data:', error);
+      }
+    };
+
+    if (employee) fetchLeaveData();
   }, [employee]);
 
   // Filter data dynamically when filters or employee data changes
   useEffect(() => {
-    if (employee) {
-      let filtered = leaveData.filter(
-        (leave) => leave.email === employee.email && leave.name === employee.name
-      );
+    if (leaveData.length > 0) {
+      let filtered = leaveData;
 
       if (filteredLeaveType) {
-        filtered = filtered.filter((leave) => leave.type === filteredLeaveType);
+        filtered = filtered.filter((leave) => leave.leaveType === filteredLeaveType);
       }
 
       if (searchDate) {
         filtered = filtered.filter(
-          (leave) => leave.startDate <= searchDate && leave.endDate >= searchDate
+          (leave) =>
+            leave.startDate <= searchDate &&
+            (leave.endDate ? leave.endDate >= searchDate : true) // Handle open-ended leaves
         );
       }
 
       setFilteredData(filtered);
     }
-  }, [employee, filteredLeaveType, searchDate]);
+  }, [leaveData, filteredLeaveType, searchDate]);
 
   // Reset filters
   const handleReset = () => {
     setFilteredLeaveType('');
     setSearchDate('');
+    setFilteredData(leaveData); // Reset to original data
   };
 
   if (!employee) {
@@ -95,9 +114,9 @@ const LeavePage = () => {
             sx={{ width: '250px' }}
           >
             <MenuItem value="">All Leave Types</MenuItem>
-            <MenuItem value="Sick Leave">Sick Leave</MenuItem>
-            <MenuItem value="Annual Leave">Annual Leave</MenuItem>
-            <MenuItem value="Casual Leave">Casual Leave</MenuItem>
+            <MenuItem value="Sick">Sick Leave</MenuItem>
+            <MenuItem value="Casual">Casual Leave</MenuItem>
+            <MenuItem value="Annual">Annual Leave</MenuItem>
           </Select>
 
           {/* Search by Date */}
@@ -127,14 +146,16 @@ const LeavePage = () => {
                 <TableCell>Leave ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Leave Type</TableCell>
+                <TableCell>Reason</TableCell>
                 <TableCell>Start Date</TableCell>
                 <TableCell>End Date</TableCell>
+                <TableCell>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={7} align="center">
                     No leave records found.
                   </TableCell>
                 </TableRow>
@@ -143,9 +164,11 @@ const LeavePage = () => {
                   <TableRow key={leave.id}>
                     <TableCell>{leave.id}</TableCell>
                     <TableCell>{leave.name}</TableCell>
-                    <TableCell>{leave.type}</TableCell>
+                    <TableCell>{leave.leaveType}</TableCell>
+                    <TableCell>{leave.reason}</TableCell>
                     <TableCell>{leave.startDate}</TableCell>
-                    <TableCell>{leave.endDate}</TableCell>
+                    <TableCell>{leave.endDate || 'N/A'}</TableCell>
+                    <TableCell>{leave.status}</TableCell>
                   </TableRow>
                 ))
               )}

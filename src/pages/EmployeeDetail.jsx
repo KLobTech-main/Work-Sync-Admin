@@ -34,6 +34,7 @@ const EmployeeDetails = () => {
   const [editEmployee, setEditEmployee] = useState(null);
   const [showAllInfoDialogOpen, setShowAllInfoDialogOpen] = useState(false);
 
+  
   // Fetch employee data
   useEffect(() => {
     const fetchEmployees = async () => {

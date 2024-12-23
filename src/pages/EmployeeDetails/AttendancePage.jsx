@@ -1,6 +1,6 @@
 import  { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 import {
   Paper,
   Table,
@@ -16,50 +16,74 @@ import {
   Button,
 } from '@mui/material';
 
+// Utility function to format date
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Utility function to format time
+const formatTime = (timeString) => {
+  const date = new Date(timeString);
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12; // Convert to 12-hour format
+  return `${hours}:${minutes} ${ampm}`;
+};
+
 const AttendancePage = () => {
   const { state } = useLocation();
   const { employee } = state || {};
+
   const [attendanceData, setAttendanceData] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
-  const [loading, setLoading] = useState(true);
 
-  const fetchAttendanceData = async () => {
-    try {
-      const adminEmail = localStorage.getItem('adminEmail');
-      const token = localStorage.getItem('token');
-
-      if (!adminEmail || !token || !employee) {
-        console.error('Missing required data for API call');
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      if (!employee) {
+        console.error("Employee data is not available.");
         return;
       }
 
-      const response = await axios.get(
-        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/attendance/email',
-        {
-          adminEmail: adminEmail,
-          userEmail: employee.email,
-        },
-        {
+      const adminEmail = localStorage.getItem('email');
+      const token = localStorage.getItem('token');
+
+      if (!adminEmail || !token) {
+        console.error("Admin email or token is missing in localStorage.");
+        return;
+      }
+
+      const apiUrl = `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/attendance/${encodeURIComponent(
+        employee.email
+      )}?adminEmail=${encodeURIComponent(adminEmail)}`;
+
+      try {
+        const response = await axios.get(apiUrl, {
           headers: {
-            Authorization: token, // Assuming the token is a Bearer token
+            Authorization: token,
           },
+        });
+
+        if (response.status === 200) {
+          setAttendanceData(response.data);
+        } else {
+          console.error("Failed to fetch attendance data:", response.statusText);
         }
-      );
+      } catch (error) {
+        console.error("Error fetching attendance data:", error.message);
+      }
+    };
 
-      setAttendanceData(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch attendance data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
     fetchAttendanceData();
   }, [employee]);
 
+  // Filter attendance data based on selected date
   const filteredAttendance = attendanceData.filter((attendance) => {
     const matchesDate = selectedDate ? attendance.date === selectedDate : true;
     return matchesDate;
@@ -105,46 +129,40 @@ const AttendancePage = () => {
           </Box>
         </div>
 
-        {loading ? (
-          <Typography align="center" variant="h6">
-            Loading attendance data...
-          </Typography>
-        ) : (
-          <Paper>
-            <TableContainer>
-              <Table>
-                <TableHead>
+        <Paper>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Attendance ID</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Punch In</TableCell>
+                  <TableCell>Punch Out</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredAttendance.length === 0 ? (
                   <TableRow>
-                    <TableCell>Attendance ID</TableCell>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Punch In</TableCell>
-                    <TableCell>Punch Out</TableCell>
+                    <TableCell colSpan={5} align="center">
+                      No attendance records found for this employee.
+                    </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredAttendance.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center">
-                        No attendance records found.
-                      </TableCell>
+                ) : (
+                  filteredAttendance.map((attendance, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{attendance.id || index + 1}</TableCell>
+                      <TableCell>{attendance.name}</TableCell>
+                      <TableCell>{formatDate(attendance.date)}</TableCell>
+                      <TableCell>{formatTime(attendance.punchInTime)}</TableCell>
+                      <TableCell>{formatTime(attendance.punchOutTime)}</TableCell>
                     </TableRow>
-                  ) : (
-                    filteredAttendance
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((attendance) => (
-                        <TableRow key={attendance.id}>
-                          <TableCell>{attendance.id}</TableCell>
-                          <TableCell>{attendance.date}</TableCell>
-                          <TableCell>{attendance.punchIn}</TableCell>
-                          <TableCell>{attendance.punchOut}</TableCell>
-                        </TableRow>
-                      ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
 
         <TablePagination
           rowsPerPageOptions={[10]}

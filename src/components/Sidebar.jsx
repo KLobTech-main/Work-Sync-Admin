@@ -13,7 +13,8 @@ import {
   MeetingRoom as MeetingIcon,
   CheckCircle as TaskIcon,
   ConfirmationNumber as TicketIcon,
-  Announcement as Announcement
+  Announcement as Announcement,
+  HolidayVillage as Leave
 } from '@mui/icons-material';
 
 const Sidebar = () => {
@@ -51,6 +52,15 @@ const Sidebar = () => {
           </ListItem>
         </NavLink>
 
+        {/* Leave Request */}
+        <NavLink to="/admin/leave-request" className="nav-link">
+          <ListItem button>
+            <ListItemIcon>
+              <Leave sx={{ color: '#1E3A8A' }} />
+            </ListItemIcon>
+            <ListItemText primary="Leave Request" sx={{ color: '#E0F2F1' }} />
+          </ListItem>
+        </NavLink>
         {/* Meeting */}
         <NavLink to="/admin/meetings" className="nav-link">
           <ListItem button>
@@ -89,6 +99,7 @@ const Sidebar = () => {
             <ListItemText primary="Announcement" sx={{ color: '#E0F2F1' }} />
           </ListItem>
         </NavLink>
+
       </List>
     </div>
   );
