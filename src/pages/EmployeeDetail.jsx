@@ -12,6 +12,8 @@ import {
   Button,
   Typography,
   Menu,
+  Snackbar,
+  Alert,
   MenuItem,
   IconButton,
   Dialog,
@@ -30,8 +32,6 @@ const EmployeeDetails = () => {
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editEmployee, setEditEmployee] = useState(null);
   const [showAllInfoDialogOpen, setShowAllInfoDialogOpen] = useState(false);
 
   
@@ -42,6 +42,8 @@ const EmployeeDetails = () => {
       const token = localStorage.getItem('token');
 
       try {
+      setLoading(true);
+      setSnackbarOpen(true); 
         const response = await fetch(
           `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/get-all-users?adminEmail=${encodeURIComponent(email)}`,
           {
@@ -61,6 +63,10 @@ const EmployeeDetails = () => {
       } catch (error) {
         console.error('Error fetching employees:', error);
       }
+      finally {
+        setLoading(false);
+        setSnackbarOpen(false);
+      }
     };
 
     fetchEmployees();
@@ -77,10 +83,7 @@ const EmployeeDetails = () => {
 
   const handleActionSelect = (action) => {
     if (selectedEmployee) {
-      if (action === 'edit') {
-        setEditEmployee(selectedEmployee);
-        setEditDialogOpen(true);
-      } else if (action === 'showAllInfoedit') {
+      if (action === 'showAllInfo') {
         setShowAllInfoDialogOpen(true);
       } else {
         navigate(`/admin/employee/${selectedEmployee.email}/${action}`, { state: { employee: selectedEmployee } });
@@ -89,16 +92,7 @@ const EmployeeDetails = () => {
     setAnchorEl(null);
   };
 
-  const handleEditChange = (field, value) => {
-    setEditEmployee({ ...editEmployee, [field]: value });
-  };
-
-  const handleEditSave = () => {
-    setEmployees((prevEmployees) =>
-      prevEmployees.map((emp) => (emp.id === editEmployee.id ? editEmployee : emp))
-    );
-    setEditDialogOpen(false);
-  };
+ 
 
   const handleCloseShowAllInfoDialog = () => {
     setShowAllInfoDialogOpen(false);
@@ -124,11 +118,34 @@ const EmployeeDetails = () => {
     }
   };
 
+  
   const handlePrevPage = () => {
     if (page > 1) {
       setPage(page - 1);
     }
   };
+  
+  
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
 
   return (
     <div className="p-6 overflow-auto h-screen">
@@ -177,8 +194,7 @@ const EmployeeDetails = () => {
                         open={Boolean(anchorEl)}
                         onClose={handleClose}
                       >
-                        <MenuItem onClick={() => handleActionSelect('showAllInfoedit')}>Show All Info</MenuItem>
-                        <MenuItem onClick={() => handleActionSelect('edit')}>Edit Info</MenuItem>
+                        <MenuItem onClick={() => handleActionSelect('showAllInfo')}>Show All Info</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('leave')}>Leave</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('task')}>Task</MenuItem>
                         <MenuItem onClick={() => handleActionSelect('attendance')}>Attendance</MenuItem>
@@ -204,59 +220,6 @@ const EmployeeDetails = () => {
         </Button>
       </Box>
 
-      {/* Dialog to Edit Employee */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-        <DialogTitle>Edit Employee Information</DialogTitle>
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Name"
-            type="text"
-            fullWidth
-            value={editEmployee?.name || ''}
-            onChange={(e) => handleEditChange('name', e.target.value)}
-          />
-          <TextField
-            margin="dense"
-            label="Role"
-            type="text"
-            fullWidth
-            value={editEmployee?.role || ''}
-            onChange={(e) => handleEditChange('role', e.target.value)}
-          />
-          <TextField
-            margin="dense"
-            label="Joining Date"
-            type="date"
-            fullWidth
-            value={editEmployee?.joiningDate || ''}
-            onChange={(e) => handleEditChange('joiningDate', e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            margin="dense"
-            label="Mobile Number"
-            type="text"
-            fullWidth
-            value={editEmployee?.mobile || ''}
-            onChange={(e) => handleEditChange('mobile', e.target.value)}
-          />
-          <TextField
-            margin="dense"
-            label="Email"
-            type="email"
-            fullWidth
-            value={editEmployee?.email || ''}
-            onChange={(e) => handleEditChange('email', e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleEditSave} variant="contained" color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Dialog to Show All Employee Information */}
       <Dialog open={showAllInfoDialogOpen} onClose={handleCloseShowAllInfoDialog}>

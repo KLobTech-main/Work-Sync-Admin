@@ -10,6 +10,8 @@ import {
   TableRow,
   TablePagination,
   TextField,
+  Snackbar,
+  Alert,
   Button,
   Box,
 } from '@mui/material';
@@ -24,7 +26,6 @@ const SubAdminAttendance = () => {
   const token = localStorage.getItem('token'); // Get token from localStorage
 
   const [attendanceData, setAttendanceData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -32,6 +33,7 @@ const SubAdminAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(''); // Date filter state
 
   useEffect(() => {
+    
     const fetchAttendance = async () => {
       if (!email || !adminEmail || !token) {
         setError('Missing required parameters or authentication.');
@@ -40,6 +42,8 @@ const SubAdminAttendance = () => {
       }
 
       try {
+        setLoading(true);
+        setSnackbarOpen(true);
         const response = await axios.get(
           `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/attendance/${email}`,
           {
@@ -56,8 +60,9 @@ const SubAdminAttendance = () => {
       } catch (err) {
         console.error('Error fetching attendance data:', err);
         setError('Failed to fetch attendance data. Please try again later.');
-      } finally {
+      }  finally {
         setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -85,6 +90,27 @@ const SubAdminAttendance = () => {
   // Format date and time for display
   const formatDate = (date) => new Date(date).toLocaleDateString();
   const formatTime = (time) => (time ? new Date(time).toLocaleTimeString() : 'N/A');
+
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
 
   return (
     <div className="p-6">

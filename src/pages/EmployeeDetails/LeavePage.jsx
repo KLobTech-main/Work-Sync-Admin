@@ -13,6 +13,8 @@ import {
   TextField,
   MenuItem,
   Select,
+  Snackbar,
+  Alert,
   Button,
 } from '@mui/material';
 
@@ -28,6 +30,9 @@ const LeavePage = () => {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
+        
+      setLoading(true);
+      setSnackbarOpen(true);
         const adminEmail = localStorage.getItem('email');
         const token = localStorage.getItem('token');
 
@@ -52,6 +57,9 @@ const LeavePage = () => {
         setFilteredData(response.data); // Initialize filtered data with the API response
       } catch (error) {
         console.error('Error fetching leave data:', error);
+      } finally {
+        setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -93,6 +101,27 @@ const LeavePage = () => {
       </Typography>
     );
   }
+  const [loading, setLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const handleSnackbarClose = () => {
+      setSnackbarOpen(false);
+    };
+    if(loading){
+      return(
+        <>
+      <Snackbar
+        open={snackbarOpen}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+          Loading
+        </Alert>
+      </Snackbar>
+        </>
+      )
+    }
+  
 
   return (
     <div className="p-6">

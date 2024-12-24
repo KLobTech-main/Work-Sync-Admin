@@ -13,6 +13,9 @@ import {
   Typography,
   TextField,
   Box,
+
+  Snackbar,
+  Alert,
   Button,
   Dialog,
   DialogTitle,
@@ -96,10 +99,13 @@ const SubAdminDetails = () => {
   useEffect(() => {
     const fetchSubAdmins = async () => {
       try {
+        
+      setLoading(true);
+      setSnackbarOpen(true);
         const adminEmail = localStorage.getItem('email');
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/subAdmin/getSubAdmin?adminEmail=${adminEmail}`,
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/subAdmins?adminEmail=${adminEmail}`,
           {
             headers: {
               Authorization: token,
@@ -111,6 +117,9 @@ const SubAdminDetails = () => {
       } catch (error) {
         console.error('Error fetching sub-admins:', error);
         setSubAdmins(dummyData);
+      } finally {
+        setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -197,6 +206,27 @@ const handleApproveAccess = (id) => {
   const handlePrevPage = () => setPage((prev) => Math.max(prev - 1, 1));
   const handleNextPage = () =>
     setPage((prev) => (prev * rowsPerPage < filteredSubAdmins.length ? prev + 1 : prev));
+
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
 
   return (
     <div className="p-6">
@@ -454,7 +484,7 @@ const handleApproveAccess = (id) => {
     </DialogContent>
     <DialogActions>
       <Button onClick={handleCloseShowAllInfoDialog}>Close</Button>
-    </DialogActions>
+    </DialogActions>  
   </Dialog>
 
 

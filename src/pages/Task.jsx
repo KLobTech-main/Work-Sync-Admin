@@ -10,6 +10,8 @@ import {
   TableRow,
   TextField,
   Box,
+  Snackbar,
+  Alert,
   TablePagination,
   CircularProgress,
   Typography,
@@ -17,7 +19,6 @@ import {
 
 const Task = () => {
   const [tasks, setTasks] = useState([]); // State for tasks
-  const [loading, setLoading] = useState(true); // State for loading
   const [error, setError] = useState(null); // State for error
   const [searchTerm, setSearchTerm] = useState(''); // State for search filter
   const [page, setPage] = useState(0); // Current page
@@ -27,6 +28,9 @@ const Task = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        
+      setLoading(true);
+      setSnackbarOpen(true);
         const adminEmail = localStorage.getItem('email'); // Retrieve email from localStorage
         const token = localStorage.getItem('token'); // Retrieve token from localStorage
 
@@ -40,11 +44,13 @@ const Task = () => {
         );
 
         setTasks(response.data); // Update tasks state
-        setLoading(false); // Set loading to false
-      } catch (err) {
+    } catch (err) {
         setError('Failed to fetch tasks. Please try again.'); // Handle errors
-        setLoading(false); // Set loading to false
+      } finally {
+        setLoading(false);
+        setSnackbarOpen(false);
       }
+
     };
 
     fetchTasks();
@@ -68,13 +74,27 @@ const Task = () => {
     setPage(0); // Reset to first page when rows per page is changed
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    );
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
   }
+
 
   if (error) {
     return (

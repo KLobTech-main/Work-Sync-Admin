@@ -1,55 +1,91 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Checkbox, Typography, Grid, Paper, Card, CardContent, CardActions } from '@mui/material';
+import axios from 'axios';
+import {
+  Box,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
+  Card,
+  CardContent,
+  CardActions,
+} from '@mui/material';
 
 const AnnouncementForm = () => {
-  const [announcement, setAnnouncement] = useState('');
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
   const [recipient, setRecipient] = useState('');
-  const [date, setDate] = useState('');
-  const [forEmployee, setForEmployee] = useState(false);
-  const [forSubAdmin, setForSubAdmin] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleAnnouncementChange = (e) => setAnnouncement(e.target.value);
+  const handleTitleChange = (e) => setTitle(e.target.value);
+  const handleMessageChange = (e) => setMessage(e.target.value);
   const handleRecipientChange = (e) => setRecipient(e.target.value);
-  const handleDateChange = (e) => setDate(e.target.value);
-  const handleEmployeeCheckboxChange = () => setForEmployee(!forEmployee);
-  const handleSubAdminCheckboxChange = () => setForSubAdmin(!forSubAdmin);
 
-  const handleSubmit = () => {
-    if (announcement && (forEmployee || forSubAdmin)) {
-      const newAnnouncement = {
-        announcement,
-        recipient,
-        date,
-        forEmployee,
-        forSubAdmin,
-      };
+  const handleSubmit = async () => {
+    if (!title || !message || !recipient) {
+      alert('Please fill all fields');
+      return;
+    }
 
-      // Add the new announcement to the list
-      setAnnouncements([newAnnouncement, ...announcements]);
-      setAnnouncement('');
-      setRecipient('');
-      setDate('');
-      setForEmployee(false);
-      setForSubAdmin(false);
-    } else {
-      alert('Please fill all fields correctly');
+    const adminEmail = localStorage.getItem('email');
+    const token = localStorage.getItem('token');
+
+    const requestData = {
+      id: new Date().getTime().toString(), 
+      title,
+      message,
+      createdAt: new Date().toISOString(),
+      recipientType: recipient,
+      recipientId: 'recipient-id-placeholder', 
+      read: false,
+    };
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/createNotification',
+        requestData,
+        {
+          headers: {
+            Authorization: token,
+            'Content-Type': 'application/json',
+          },
+          params: { adminEmail },
+        }
+      );
+
+      if (response.status === 200) {
+        alert('Announcement created successfully');
+        setAnnouncements([requestData, ...announcements]);
+        setTitle('');
+        setMessage('');
+        setRecipient('');
+      } else {
+        alert('Failed to create announcement');
+      }
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      alert('An error occurred while creating the announcement');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Box >
+    <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#333' }}>
         Create Announcement
       </Typography>
 
-      {/* Announcement Form */}
+      {/* Title Input */}
       <TextField
-        label="Announcement"
-        multiline
-        rows={4}
-        value={announcement}
-        onChange={handleAnnouncementChange}
+        label="Title"
+        value={title}
+        onChange={handleTitleChange}
         fullWidth
         variant="outlined"
         sx={{
@@ -61,6 +97,25 @@ const AnnouncementForm = () => {
         }}
       />
 
+      {/* Announcement Message Input */}
+      <TextField
+        label="Announcement Message"
+        multiline
+        rows={4}
+        value={message}
+        onChange={handleMessageChange}
+        fullWidth
+        variant="outlined"
+        sx={{
+          marginBottom: 2,
+          backgroundColor: '#f9f9f9',
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '8px',
+          },
+        }}
+      />
+
+      {/* Recipient Selection */}
       <FormControl fullWidth variant="outlined" sx={{ marginBottom: 2 }}>
         <InputLabel>Recipient</InputLabel>
         <Select
@@ -79,51 +134,7 @@ const AnnouncementForm = () => {
         </Select>
       </FormControl>
 
-      <Grid container spacing={2} sx={{ marginBottom: 2 ,width:'50%' }}>
-        <Grid item>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={forEmployee}
-                onChange={handleEmployeeCheckboxChange}
-                color="primary"
-              />
-            }
-            label="For Employees"
-          />
-        </Grid>
-        <Grid item>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={forSubAdmin}
-                onChange={handleSubAdminCheckboxChange}
-                color="primary"
-              />
-            }
-            label="For Sub-Admins"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Date Selection with TextField */}
-      <TextField
-        label="Announcement Date"
-        type="date"
-        InputLabelProps={{ shrink: true }}
-        value={date}
-        onChange={handleDateChange}
-        variant="outlined"
-        sx={{
-          width: '250px',
-          marginBottom: 2,
-          backgroundColor: '#f9f9f9',
-          '& .MuiOutlinedInput-root': {
-            borderRadius: '8px',
-          },
-        }}
-      />
-
+      {/* Submit Button */}
       <Box sx={{ marginTop: 3 }}>
         <Button
           variant="contained"
@@ -134,14 +145,15 @@ const AnnouncementForm = () => {
             borderRadius: '8px',
             fontWeight: 'bold',
             padding: '12px',
-            width :'200px',
+            width: '200px',
             backgroundColor: '#007bff',
             '&:hover': {
               backgroundColor: '#0056b3',
             },
           }}
+          disabled={loading}
         >
-          Submit Announcement
+          {loading ? 'Submitting...' : 'Submit Announcement'}
         </Button>
       </Box>
 
@@ -158,19 +170,13 @@ const AnnouncementForm = () => {
                   Announcement {index + 1}
                 </Typography>
                 <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                  <strong>Announcement:</strong> {item.announcement}
+                  <strong>Title:</strong> {item.title}
                 </Typography>
                 <Typography variant="body2" sx={{ marginBottom: 1 }}>
-                  <strong>Recipient:</strong> {item.recipient}
-                </Typography>
-                <Typography variant="body2" sx={{ marginBottom: 1 }}>
-                  <strong>Date:</strong> {item.date}
-                </Typography>
-                <Typography variant="body2" sx={{ marginBottom: 1 }}>
-                  <strong>For Employees:</strong> {item.forEmployee ? 'Yes' : 'No'}
+                  <strong>Message:</strong> {item.message}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>For Sub-Admins:</strong> {item.forSubAdmin ? 'Yes' : 'No'}
+                  <strong>Recipient:</strong> {item.recipientType}
                 </Typography>
               </CardContent>
               <CardActions>

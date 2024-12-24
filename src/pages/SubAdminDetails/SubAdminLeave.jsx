@@ -10,6 +10,9 @@ import {
   TableRow,
   TablePagination,
   Select,
+  
+  Snackbar,
+  Alert,
   MenuItem,
   TextField,
   Button,
@@ -24,7 +27,7 @@ const SubAdminLeave = () => {
   // const email = 'luffy@gmail.com' // Employee email from query parameter
 
   const [leaveRequests, setLeaveRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState(null);
 
   const [filteredLeaveType, setFilteredLeaveType] = useState('');
@@ -35,12 +38,15 @@ const SubAdminLeave = () => {
   useEffect(() => {
     const fetchLeaveRequests = async () => {
       try {
+        
+      setLoading(true);
+      setSnackbarOpen(true);
         const token = localStorage.getItem('token');
         const adminEmail = localStorage.getItem('email');
 
         if (!email || !adminEmail || !token) {
           setError('Missing required parameters or authentication.');
-          setLoading(false);
+         
           return;
         }
 
@@ -60,8 +66,9 @@ const SubAdminLeave = () => {
       } catch (err) {
         console.error('Error fetching leave requests:', err);
         setError('Failed to fetch leave requests. Please try again later.');
-      } finally {
+      }  finally {
         setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -85,6 +92,27 @@ const SubAdminLeave = () => {
   };
 
   const currentPageData = filteredRequests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
 
   return (
     <div className="p-6">

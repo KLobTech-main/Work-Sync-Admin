@@ -11,6 +11,8 @@ import {
   TextField,
   MenuItem,
   Select,
+  Snackbar,
+  Alert,
   InputLabel,
   FormControl,
   Box,
@@ -25,13 +27,13 @@ const Ticket = () => {
   const [searchEmployee, setSearchEmployee] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTickets = async () => {
       try {
         setLoading(true);
+        setSnackbarOpen(true);
         const adminEmail = localStorage.getItem('email'); // Fetch from localStorage
         const token = localStorage.getItem('token'); // Fetch from localStorage
         const response = await axios.get(
@@ -44,8 +46,9 @@ const Ticket = () => {
         setTickets(response.data);
       } catch (err) {
         setError('Failed to fetch tickets. Please try again.');
-      } finally {
+      }  finally {
         setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -69,7 +72,27 @@ const Ticket = () => {
     setPage(0);
   };
 
-  if (loading) return <div>Loading...</div>;
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
+
   if (error) return <div>{error}</div>;
 
   return (

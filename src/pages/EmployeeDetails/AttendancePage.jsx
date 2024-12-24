@@ -12,6 +12,8 @@ import {
   Typography,
   TextField,
   Box,
+  Alert,
+  Snackbar,
   TablePagination,
   Button,
 } from '@mui/material';
@@ -45,6 +47,9 @@ const AttendancePage = () => {
   const [rowsPerPage] = useState(10);
 
   useEffect(() => {
+    
+    setLoading(true);
+    setSnackbarOpen(true); 
     const fetchAttendanceData = async () => {
       if (!employee) {
         console.error("Employee data is not available.");
@@ -78,6 +83,10 @@ const AttendancePage = () => {
       } catch (error) {
         console.error("Error fetching attendance data:", error.message);
       }
+      finally {
+        setLoading(false);
+        setSnackbarOpen(false);
+      }
     };
 
     fetchAttendanceData();
@@ -97,6 +106,26 @@ const AttendancePage = () => {
     setSelectedDate('');
     setPage(0);
   };
+   const [loading, setLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const handleSnackbarClose = () => {
+      setSnackbarOpen(false);
+    };
+  if(loading){
+      return(
+        <>
+      <Snackbar
+        open={snackbarOpen}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+          Loading
+        </Alert>
+      </Snackbar>
+        </>
+      )
+    }
 
   if (!employee) {
     return (

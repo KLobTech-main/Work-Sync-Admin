@@ -10,6 +10,8 @@ import {
   TableRow,
   TextField,
   Box,
+  Snackbar,
+  Alert,
   TablePagination,
 } from '@mui/material';
 
@@ -27,6 +29,9 @@ const Meeting = () => {
       const token = localStorage.getItem('token');
 
       try {
+      
+      setLoading(true);
+      setSnackbarOpen(true);
         const response = await axios.get(
           'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/meetings/get-all',
           {
@@ -42,6 +47,9 @@ const Meeting = () => {
         setMeetings(response.data);
       } catch (error) {
         console.error('Error fetching meetings:', error);
+      } finally {
+        setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -65,6 +73,26 @@ const Meeting = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0); // Reset to first page when rows per page is changed
   };
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
+  }
 
   return (
     <div className="p-6">

@@ -12,6 +12,9 @@ import {
   TextField,
   Button,
   Box,
+  
+  Snackbar,
+  Alert,
   MenuItem,
   Select,
   FormControl,
@@ -26,12 +29,14 @@ const TaskPage = () => {
   const [taskNameFilter, setTaskNameFilter] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('');
   const [filteredTasks, setFilteredTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        
+      setLoading(true);
+      setSnackbarOpen(true); 
         const adminEmail = localStorage.getItem('email');
         const token = localStorage.getItem('token');
 
@@ -59,8 +64,9 @@ const TaskPage = () => {
         setFilteredTasks(data.tasks || []);
       } catch (err) {
         setError(err.message);
-      } finally {
+      }  finally {
         setLoading(false);
+        setSnackbarOpen(false);
       }
     };
 
@@ -100,14 +106,28 @@ const TaskPage = () => {
       </Typography>
     );
   }
+  const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
-  if (loading) {
-    return (
-      <Typography variant="h6" align="center">
-        Loading tasks...
-      </Typography>
-    );
+  if(loading){
+    return(
+      <>
+    <Snackbar
+      open={snackbarOpen}
+      onClose={handleSnackbarClose}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+    >
+      <Alert onClose={handleSnackbarClose} severity="info" sx={{ width: '100%' }}>
+        Loading
+      </Alert>
+    </Snackbar>
+      </>
+    )
   }
+
 
   if (error) {
     return (
