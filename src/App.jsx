@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { Box } from '@mui/material';
-import Sidebar from './components/Sidebar'; // Sidebar component
+import Sidebar from './components/Sidebar'; 
 import EmployeeDetails from './pages/EmployeeDetail';
 import SubAdminDetails from './pages/SubAdminDetail';
 import Ticket from './pages/Ticket';
@@ -16,6 +16,9 @@ import SubAdminAttendance from './pages/SubAdminDetails/SubAdminAttendance';
 import SubAdminLeave from './pages/SubAdminDetails/SubAdminLeave';
 import AnnouncementForm from './pages/AnnouncementForm';
 import LeaveRequest from './pages/LeaveRequest';
+import PrivateRoute from './components/PrivateRoute';
+import NotFound from './pages/NotFound.jsx';  // Import NotFound page
+
 const AppContent = () => {
   const location = useLocation();
 
@@ -56,20 +59,62 @@ const AppContent = () => {
         }}
       >
         <Routes>
+          {/* Public Routes */}
           <Route path="/admin/login" element={<Login />} />
           <Route path="/admin/register" element={<Register />} />
-          <Route path="/admin/employee-details" element={<EmployeeDetails />} />
-          <Route path="/admin/employee/:id/leave" element={<LeavePage />} />
-          <Route path="/admin/employee/:id/task" element={<TaskPage />} />
-          <Route path="/admin/employee/:id/attendance" element={<AttendancePage />} />
-          <Route path="/admin/subadmin-details" element={<SubAdminDetails />} />
-          <Route path="/subadmin/:id/leave" element={<SubAdminLeave />} />
-          <Route path="/subadmin/:email/attendance" element={<SubAdminAttendance />} />
-          <Route path="/admin/meetings" element={<Meeting />} />
-          <Route path="/admin/tasks" element={<Task />} />
-          <Route path="/admin/tickets" element={<Ticket />} />
-          <Route path="/admin/announcement" element={<AnnouncementForm />} />
-          <Route path="/admin/leave-request" element={<LeaveRequest />} />
+
+          {/* Private Routes */}
+          <Route
+            path="/admin/employee-details"
+            element={<PrivateRoute><EmployeeDetails /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/employee/:id/leave"
+            element={<PrivateRoute><LeavePage /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/employee/:id/task"
+            element={<PrivateRoute><TaskPage /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/employee/:id/attendance"
+            element={<PrivateRoute><AttendancePage /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/subadmin-details"
+            element={<PrivateRoute><SubAdminDetails /></PrivateRoute>}
+          />
+          <Route
+            path="/subadmin/:id/leave"
+            element={<PrivateRoute><SubAdminLeave /></PrivateRoute>}
+          />
+          <Route
+            path="/subadmin/:email/attendance"
+            element={<PrivateRoute><SubAdminAttendance /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/meetings"
+            element={<PrivateRoute><Meeting /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/tasks"
+            element={<PrivateRoute><Task /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/tickets"
+            element={<PrivateRoute><Ticket /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/announcement"
+            element={<PrivateRoute><AnnouncementForm /></PrivateRoute>}
+          />
+          <Route
+            path="/admin/leave-request"
+            element={<PrivateRoute><LeaveRequest /></PrivateRoute>}
+          />
+
+          {/* 404 Route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Box>
     </Box>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Paper,
   Typography,
@@ -15,121 +16,144 @@ import {
   Box,
   FormControl,
   InputLabel,
-  Switch,
+  CircularProgress,
 } from '@mui/material';
 
 const LeaveRequest = () => {
-  // Dummy data
-  const dummyLeaveData = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      leaveType: 'Sick',
-      reason: 'Flu',
-      status: 'Pending',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      leaveType: 'Paternity',
-      reason: 'Newborn care',
-      status: 'Approved',
-    },
-    {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob@example.com',
-      leaveType: 'Casual',
-      reason: 'Personal work',
-      status: 'Rejected',
-    },
-    {
-      id: '4',
-      name: 'Alice Brown',
-      email: 'alice@example.com',
-      leaveType: 'Optional',
-      reason: 'Festival',
-      status: 'Pending',
-    },
-    {
-      id: '5',
-      name: 'Charlie White',
-      email: 'charlie@example.com',
-      leaveType: 'Sick',
-      reason: 'Back pain',
-      status: 'Pending',
-    },
-  ];
-
-  const [leaveData, setLeaveData] = useState(dummyLeaveData);
+  const [leaveData, setLeaveData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [page, setPage] = useState(0);
   const rowsPerPage = 10;
 
   const [nameFilter, setNameFilter] = useState('');
   const [leaveTypeFilter, setLeaveTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  // Handle page change
+  useEffect(() => {
+    const fetchLeaveRequests = async () => {
+      const adminEmail = localStorage.getItem('email');
+      const token = localStorage.getItem('token');
+
+      try {
+        const response = await axios.get(
+          'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/leaves/pending',
+          {
+            params: { adminEmail },
+            headers: { Authorization: token }, // No Bearer prefix
+          }
+        );
+        setLeaveData(response.data);
+      } catch (err) {
+        setError('Failed to fetch leave requests. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaveRequests();
+  }, []);
+
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // Filter data based on name and leave type
+  const handleActionChange = async (leaveId, newStatus) => {
+    const token = localStorage.getItem('token');
+    const adminEmail = localStorage.getItem('email');
+
+    try {
+      await axios.patch(
+        'https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/approve/leave',
+        {
+          adminEmail,
+          leaveId,
+          status: newStatus,
+        },
+        { headers: { Authorization: token } } // No Bearer prefix
+      );
+
+      setLeaveData((prevData) =>
+        prevData.map((leave) =>
+          leave.id === leaveId ? { ...leave, status: newStatus } : leave
+        )
+      );
+      alert(`Leave ${newStatus.toLowerCase()} successfully!`);
+    } catch (err) {
+      console.error('Error updating leave status:', err.response?.data || err.message);
+      alert('Failed to update leave status. Please try again.');
+    }
+  };
+
   const filteredData = leaveData.filter(
     (leave) =>
       (!nameFilter || leave.name.toLowerCase().includes(nameFilter.toLowerCase())) &&
-      (!leaveTypeFilter || leave.leaveType === leaveTypeFilter)
+      (!leaveTypeFilter || leave.leaveType === leaveTypeFilter) &&
+      (!statusFilter || leave.status === statusFilter)
   );
 
-  // Paginate filtered data
   const currentPageData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  // Handle status toggle
-  const handleStatusToggle = (id) => {
-    setLeaveData((prevData) =>
-      prevData.map((leave) =>
-        leave.id === id ? { ...leave, status: leave.status === 'Approved' ? 'Rejected' : 'Approved' } : leave
-      )
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <Typography color="error" align="center">
+        {error}
+      </Typography>
+    );
+  }
 
   return (
     <div className="p-6">
-    <div className='flex justify-between items-center'>
+      <div className="flex justify-between items-center">
+        <Typography variant="h4" gutterBottom>
+          Leave Requests
+        </Typography>
 
-      <Typography variant="h4" gutterBottom>
-        Leave Requests
-      </Typography>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', marginBottom: 2 }}>
+          <TextField
+            label="Filter by Name"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            variant="outlined"
+            sx={{ width: '200px' }}
+          />
+          <FormControl variant="outlined" sx={{ width: '200px' }}>
+            <InputLabel>Filter by Leave Type</InputLabel>
+            <Select
+              value={leaveTypeFilter}
+              onChange={(e) => setLeaveTypeFilter(e.target.value)}
+              label="Filter by Leave Type"
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="Sick">Sick Leave</MenuItem>
+              <MenuItem value="Casual">Casual Leave</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl variant="outlined" sx={{ width: '200px' }}>
+            <InputLabel>Filter by Status</InputLabel>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              label="Filter by Status"
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="PENDING">Pending</MenuItem>
+              <MenuItem value="Approved">Approved</MenuItem>
+              <MenuItem value="Rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </div>
 
-      {/* Filters */}
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', marginBottom: 2 }}>
-        <TextField
-          label="Filter by Name"
-          value={nameFilter}
-          onChange={(e) => setNameFilter(e.target.value)}
-          variant="outlined"
-          sx={{ width: '250px' }}
-        />
-        <FormControl variant="outlined" sx={{ width: '250px' }}>
-          <InputLabel>Filter by Leave Type</InputLabel>
-          <Select
-            value={leaveTypeFilter}
-            onChange={(e) => setLeaveTypeFilter(e.target.value)}
-            label="Filter by Leave Type"
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="Sick">Sick Leave</MenuItem>
-            <MenuItem value="Paternity">Paternity Leave</MenuItem>
-            <MenuItem value="Casual">Casual Leave</MenuItem>
-            <MenuItem value="Optional">Optional Leave</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-    </div>
-
-      {/* Table */}
       <Paper elevation={3}>
         <TableContainer>
           <Table>
@@ -161,11 +185,19 @@ const LeaveRequest = () => {
                     <TableCell>{leave.reason}</TableCell>
                     <TableCell>{leave.status}</TableCell>
                     <TableCell>
-                      <Switch
-                        checked={leave.status === 'Approved'}
-                        onChange={() => handleStatusToggle(leave.id)}
-                        color="primary"
-                      />
+                      <FormControl>
+                        <Select
+                          value=""
+                          onChange={(e) => handleActionChange(leave.id, e.target.value)}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>
+                            Select Action
+                          </MenuItem>
+                          <MenuItem value="Approved">Approve</MenuItem>
+                          <MenuItem value="Rejected">Reject</MenuItem>
+                        </Select>
+                      </FormControl>
                     </TableCell>
                   </TableRow>
                 ))
@@ -174,14 +206,15 @@ const LeaveRequest = () => {
           </Table>
         </TableContainer>
       </Paper>
-        <TablePagination
-          component="div"
-          count={filteredData.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          rowsPerPageOptions={[]}
-        />
+
+      <TablePagination
+        component="div"
+        count={filteredData.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={[]}
+      />
     </div>
   );
 };
