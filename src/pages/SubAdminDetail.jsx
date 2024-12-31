@@ -13,7 +13,6 @@ import {
   Typography,
   TextField,
   Box,
-
   Snackbar,
   Alert,
   Button,
@@ -105,7 +104,7 @@ const SubAdminDetails = () => {
         const adminEmail = localStorage.getItem('email');
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/subAdmins?adminEmail=${adminEmail}`,
+          `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/subAdmin/getSubAdmin?adminEmail=${adminEmail}`,
           {
             headers: {
               Authorization: token,
@@ -117,7 +116,7 @@ const SubAdminDetails = () => {
       } catch (error) {
         console.error('Error fetching sub-admins:', error);
         setSubAdmins(dummyData);
-      } finally {
+      }finally {
         setLoading(false);
         setSnackbarOpen(false);
       }
@@ -227,7 +226,6 @@ const handleApproveAccess = (id) => {
       </>
     )
   }
-
   return (
     <div className="p-6">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -484,7 +482,7 @@ const handleApproveAccess = (id) => {
     </DialogContent>
     <DialogActions>
       <Button onClick={handleCloseShowAllInfoDialog}>Close</Button>
-    </DialogActions>  
+    </DialogActions>
   </Dialog>
 
 

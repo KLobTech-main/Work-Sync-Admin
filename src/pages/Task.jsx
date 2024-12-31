@@ -15,65 +15,75 @@ import {
   TablePagination,
   CircularProgress,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
 
 const Task = () => {
-  const [tasks, setTasks] = useState([]); // State for tasks
-  const [error, setError] = useState(null); // State for error
-  const [searchTerm, setSearchTerm] = useState(''); // State for search filter
-  const [page, setPage] = useState(0); // Current page
-  const [rowsPerPage, setRowsPerPage] = useState(10); // Rows per page
+  const [tasks, setTasks] = useState([]);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedTask, setSelectedTask] = useState(null); // For the selected task
+  const [dialogOpen, setDialogOpen] = useState(false); // Dialog state
 
   // Fetch tasks from API
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        
-      setLoading(true);
-      setSnackbarOpen(true);
-        const adminEmail = localStorage.getItem('email'); // Retrieve email from localStorage
-        const token = localStorage.getItem('token'); // Retrieve token from localStorage
-
+        setLoading(true);
+        setSnackbarOpen(true);
+        const adminEmail = localStorage.getItem('email');
+        const token = localStorage.getItem('token');
         const response = await axios.get(
           `https://work-sync-gbf0h9d5amcxhwcr.canadacentral-01.azurewebsites.net/admin/api/tasks/all?adminEmail=${adminEmail}`,
           {
             headers: {
-              Authorization: token, // Add token to request headers
+              Authorization: token,
             },
           }
         );
-
-        setTasks(response.data); // Update tasks state
-    } catch (err) {
-        setError('Failed to fetch tasks. Please try again.'); // Handle errors
+        setTasks(response.data);
+      } catch (err) {
+        setError('Failed to fetch tasks. Please try again.');
       } finally {
         setLoading(false);
         setSnackbarOpen(false);
       }
-
     };
 
     fetchTasks();
   }, []);
 
-  // Filter tasks based on search input
+  // Handle row click
+  const handleRowClick = (task) => {
+    setSelectedTask(task); // Set selected task
+    setDialogOpen(true); // Open dialog
+  };
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setSelectedTask(null); // Clear selected task
+  };
+
+  // Filtered tasks
   const filteredTasks = tasks.filter(
     (task) =>
       task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Handle page change
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
+  // Handle page and rows per page changes
+  const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // Reset to first page when rows per page is changed
+    setPage(0);
   };
-
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const handleSnackbarClose = () => {
@@ -95,7 +105,6 @@ const Task = () => {
     )
   }
 
-
   if (error) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -108,22 +117,19 @@ const Task = () => {
 
   return (
     <div className="p-6">
-      {/* Header and Search Box */}
       <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom={2}>
         <h2 className="text-xl font-bold">Employee Tasks</h2>
-        {/* Search Input on the Right */}
         <Box sx={{ width: '400px' }}>
           <TextField
             label="Search by Name or Task"
             variant="outlined"
             fullWidth
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} // Update search term
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </Box>
       </Box>
 
-      {/* Task Table */}
       <Paper>
         <TableContainer>
           <Table>
@@ -141,21 +147,24 @@ const Task = () => {
             <TableBody>
               {filteredTasks.length > 0 ? (
                 filteredTasks
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) // Show `rowsPerPage` tasks per page
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((task) => (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} onClick={() => handleRowClick(task)} style={{ cursor: 'pointer' }}>
                       <TableCell>{task.id}</TableCell>
                       <TableCell>{task.assignedBy}</TableCell>
                       <TableCell>{task.assignedTo}</TableCell>
                       <TableCell>{task.title}</TableCell>
-                      <TableCell>{task.description}</TableCell>
+                      <TableCell>
+                        {task.description.split(' ').slice(0, 5).join(' ')}
+                        {task.description.split(' ').length > 5 && '...'}
+                      </TableCell>
                       <TableCell>{task.deadLine}</TableCell>
                       <TableCell>{task.status}</TableCell>
                     </TableRow>
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={7} align="center">
                     No tasks match the search criteria.
                   </TableCell>
                 </TableRow>
@@ -165,16 +174,36 @@ const Task = () => {
         </TableContainer>
       </Paper>
 
-      {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[10]} // Allow only 10 rows per page
+        rowsPerPageOptions={[10]}
         component="div"
         count={filteredTasks.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage} // Allow changing rows per page
+        onRowsPerPageChange={handleChangeRowsPerPage}
       />
+
+      {/* Dialog for Task Details */}
+      <Dialog open={dialogOpen} onClose={handleDialogClose}>
+        <DialogTitle>Task Details</DialogTitle>
+        <DialogContent>
+          {selectedTask && (
+            <>
+              <Typography><strong>ID:</strong> {selectedTask.id}</Typography>
+              <Typography><strong>Assigned By:</strong> {selectedTask.assignedBy}</Typography>
+              <Typography><strong>Assigned To:</strong> {selectedTask.assignedTo}</Typography>
+              <Typography><strong>Title:</strong> {selectedTask.title}</Typography>
+              <Typography><strong>Description:</strong> {selectedTask.description}</Typography>
+              <Typography><strong>Deadline:</strong> {selectedTask.deadLine}</Typography>
+              <Typography><strong>Status:</strong> {selectedTask.status}</Typography>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
